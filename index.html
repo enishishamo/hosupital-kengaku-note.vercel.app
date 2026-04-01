@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>病院見学ノート</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='bg' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2312b080'/%3E%3Cstop offset='100%25' stop-color='%230a6e52'/%3E%3C/linearGradient%3E%3ClinearGradient id='sh' x1='0%25' y1='0%25' x2='0%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='rgba(255,255,255,0.18)'/%3E%3Cstop offset='100%25' stop-color='rgba(255,255,255,0)'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='112' fill='url(%23bg)'/%3E%3Crect width='512' height='512' rx='112' fill='url(%23sh)'/%3E%3Crect x='112' y='108' width='288' height='330' rx='22' fill='white' opacity='0.97'/%3E%3Crect x='196' y='90' width='120' height='44' rx='14' fill='%230a8a68'/%3E%3Crect x='220' y='96' width='72' height='32' rx='9' fill='white' opacity='0.9'/%3E%3Ccircle cx='256' cy='112' r='10' fill='%230a8a68'/%3E%3Crect x='228' y='172' width='56' height='18' rx='9' fill='%230f8a6c'/%3E%3Crect x='247' y='153' width='18' height='56' rx='9' fill='%230f8a6c'/%3E%3Ctext x='142' y='298' font-size='52' fill='%23f0c040' font-family='sans-serif'%3E%E2%98%85%3C/text%3E%3Ctext x='202' y='298' font-size='52' fill='%23f0c040' font-family='sans-serif'%3E%E2%98%85%3C/text%3E%3Ctext x='262' y='298' font-size='52' fill='%23f0c040' font-family='sans-serif'%3E%E2%98%85%3C/text%3E%3Ctext x='322' y='298' font-size='52' fill='%23f0c040' font-family='sans-serif'%3E%E2%98%85%3C/text%3E%3Crect x='142' y='320' width='228' height='12' rx='6' fill='%23e0ede8'/%3E%3Crect x='142' y='348' width='180' height='12' rx='6' fill='%23e0ede8'/%3E%3Crect x='142' y='376' width='204' height='12' rx='6' fill='%23e0ede8'/%3E%3C/svg%3E"/>
+  <link rel="apple-touch-icon" href="icon.svg"/>
+  <meta name="theme-color" content="#0f8a6c"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Zen Kaku Gothic New', 'Noto Sans JP', sans-serif; background: #f0f6f3; }
+    input, textarea, select, button { font-family: inherit; }
+    textarea { resize: vertical; }
+    input[type="date"] { width: 100% !important; max-width: 100% !important; min-width: 0 !important; box-sizing: border-box !important; -webkit-appearance: none; appearance: none; }
+    body { overflow-x: hidden; }
+    * { box-sizing: border-box; }
+      input[type="date"] { width: 100%; box-sizing: border-box; display: block; min-width: 0; }
+      body { overflow-x: hidden; }
+    ::selection { background: #0f8a6c33; }
+    input:focus, textarea:focus, select:focus { outline: 2px solid #0f8a6c; outline-offset: -1px; }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: #fff; }
+      /* モーダルを印刷用に整形 */
+      body > * { display: none !important; }
+      .print-modal { display: block !important; position: static !important; background: #fff !important; }
+      .print-modal-inner { box-shadow: none !important; border-radius: 0 !important; max-height: none !important; overflow: visible !important; padding: 20px !important; }
+      .print-modal-overlay { background: none !important; position: static !important; display: block !important; }
+    }
+    /* スクロールバー */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #c8d8d0; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
+
+    /* ===== 定数 ===== */
+    const CATEGORIES = [
+      { key: "residentAtmosphere", label: "研修医の雰囲気", icon: "🩺" },
+      { key: "mentoring",          label: "指導体制",       icon: "👨‍⚕️" },
+      { key: "emergency",          label: "救急の充実度",   icon: "🚑" },
+      { key: "worklife",           label: "労働環境",       icon: "⏰" },
+      { key: "education",          label: "教育・勉強",     icon: "📚" },
+      { key: "compensation",       label: "待遇・給料",     icon: "💰" },
+      { key: "living",             label: "生活環境",       icon: "🏠" },
+      { key: "accessibility",      label: "アクセス",       icon: "🚃" },
+    ];
+
+    const CHECKLIST_ITEMS = [
+      { key: "residentRoom",      label: "研修医室の教科書（量・やり込み度）" },
+      { key: "staffFace",         label: "コメディカルの顔（イキイキしているか）" },
+      { key: "cafeteria",         label: "食堂・売店・カフェの有無" },
+      { key: "dormitory",         label: "寮の確認（共同か個室か）" },
+      { key: "surroundings",      label: "病院周辺の環境（飲食店など）" },
+      { key: "residentTiredness", label: "研修医の疲労度（顔色・表情）" },
+      { key: "phsFrequency",      label: "PHSの鳴る頻度（忙しさの指標）" },
+      { key: "cliques",           label: "派閥の有無" },
+      { key: "secondYear",        label: "2年目→1年目へのサポート体制" },
+    ];
+
+
+    const HOSPITAL_NAMES = [
+      // ── 大学病院 ──
+      "北海道大学病院","札幌医科大学附属病院","旭川医科大学病院",
+      "東北大学病院","弘前大学医学部附属病院","秋田大学医学部附属病院",
+      "山形大学医学部附属病院","岩手医科大学附属病院","福島県立医科大学附属病院",
+      "東京大学医学部附属病院","慶應義塾大学病院","順天堂大学医学部附属順天堂医院",
+      "日本医科大学付属病院","東京医科大学病院","東京慈恵会医科大学附属病院",
+      "昭和大学病院","東邦大学医療センター大森病院","東邦大学医療センター大橋病院",
+      "東邦大学医療センター佐倉病院","帝京大学医学部附属病院","杏林大学医学部付属病院",
+      "東京女子医科大学病院","日本大学医学部附属板橋病院","聖マリアンナ医科大学病院",
+      "北里大学病院","東海大学医学部付属病院","横浜市立大学附属病院",
+      "千葉大学医学部附属病院","筑波大学附属病院","群馬大学医学部附属病院",
+      "埼玉医科大学病院","埼玉医科大学総合医療センター","獨協医科大学病院",
+      "自治医科大学附属病院","栃木医療センター",
+      "新潟大学医歯学総合病院","富山大学附属病院","金沢大学附属病院",
+      "金沢医科大学病院","福井大学医学部附属病院","信州大学医学部附属病院",
+      "山梨大学医学部附属病院","浜松医科大学医学部附属病院","静岡県立総合病院",
+      "名古屋大学医学部附属病院","名古屋市立大学病院","愛知医科大学病院",
+      "藤田医科大学病院","三重大学医学部附属病院","岐阜大学医学部附属病院",
+      "京都大学医学部附属病院","大阪大学医学部附属病院","神戸大学医学部附属病院",
+      "大阪市立大学医学部附属病院","大阪府立病院","関西医科大学附属病院",
+      "近畿大学病院","兵庫医科大学病院","奈良県立医科大学附属病院",
+      "和歌山県立医科大学附属病院","滋賀医科大学医学部附属病院",
+      "鳥取大学医学部附属病院","島根大学医学部附属病院","岡山大学病院",
+      "川崎医科大学附属病院","広島大学病院","山口大学医学部附属病院",
+      "徳島大学病院","香川大学医学部附属病院","愛媛大学医学部附属病院",
+      "高知大学医学部附属病院","九州大学病院","福岡大学病院",
+      "産業医科大学病院","久留米大学病院","佐賀大学医学部附属病院",
+      "長崎大学病院","熊本大学病院","大分大学医学部附属病院",
+      "宮崎大学医学部附属病院","鹿児島大学病院","琉球大学病院",
+
+      // ── 赤十字病院 ──
+      "札幌赤十字病院","釧路赤十字病院","旭川赤十字病院",
+      "仙台赤十字病院","秋田赤十字病院","福島赤十字病院",
+      "水戸赤十字病院","前橋赤十字病院","さいたま赤十字病院",
+      "成田赤十字病院","東京都赤十字血液センター","日本赤十字社医療センター",
+      "武蔵野赤十字病院","横浜市立みなと赤十字病院","富山赤十字病院",
+      "金沢赤十字病院","福井赤十字病院","長野赤十字病院",
+      "名古屋第一赤十字病院","名古屋第二赤十字病院","岐阜赤十字病院",
+      "静岡赤十字病院","浜松赤十字病院","京都第一赤十字病院",
+      "京都第二赤十字病院","大阪赤十字病院","大阪府赤十字血液センター",
+      "神戸赤十字病院","姫路赤十字病院","奈良赤十字病院",
+      "和歌山赤十字病院","岡山赤十字病院","広島赤十字・原爆病院",
+      "高松赤十字病院","松山赤十字病院","高知赤十字病院",
+      "福岡赤十字病院","長崎原爆病院","熊本赤十字病院",
+      "大分赤十字病院","鹿児島赤十字病院",
+
+      // ── 済生会病院 ──
+      "済生会札幌病院","済生会山形済生病院","済生会宇都宮病院",
+      "済生会川口総合病院","済生会横浜市東部病院","済生会横浜市南部病院",
+      "済生会富山病院","済生会金沢病院","済生会福井病院",
+      "済生会静岡病院","済生会松阪総合病院","済生会京都府病院",
+      "済生会大阪病院","済生会千里病院","済生会泉尾病院",
+      "済生会奈良病院","済生会和歌山病院","済生会広島病院",
+      "済生会松山病院","済生会福岡病院","済生会熊本病院",
+
+      // ── 徳洲会グループ ──
+      "札幌徳洲会病院","仙台徳洲会病院","千葉徳洲会病院",
+      "湘南鎌倉総合病院","湘南藤沢徳洲会病院","東京西徳洲会病院",
+      "名古屋徳洲会総合病院","大阪徳洲会病院","大和徳洲会病院",
+      "岸和田徳洲会病院","宇治徳洲会病院","神戸徳洲会病院",
+      "八尾徳洲会総合病院","四日市羽津医療センター",
+      "福岡徳洲会病院","熊本中央病院","鹿児島徳洲会病院",
+      "中部徳洲会病院","南部徳洲会病院","湘南厚木病院",
+
+      // ── 国立病院機構 ──
+      "国立病院機構北海道がんセンター","国立病院機構仙台医療センター",
+      "国立病院機構水戸医療センター","国立病院機構千葉医療センター",
+      "国立病院機構東京医療センター","国立病院機構横浜医療センター",
+      "国立病院機構名古屋医療センター","国立病院機構大阪医療センター",
+      "国立病院機構京都医療センター","国立病院機構神戸医療センター",
+      "国立病院機構広島西医療センター","国立病院機構四国がんセンター",
+      "国立病院機構九州医療センター","国立病院機構熊本医療センター",
+      "国立病院機構鹿児島医療センター",
+
+      // ── 市中病院・公立病院 ──
+      "札幌市立病院","函館市立病院","青森市民病院",
+      "仙台市立病院","秋田市立病院","福島市立病院",
+      "水戸市立病院","宇都宮市立病院","前橋市立前橋病院",
+      "さいたま市立病院","川越市立川越病院","千葉市立海浜病院",
+      "東京都立多摩総合医療センター","東京都立墨東病院","東京都立広尾病院",
+      "東京都立大塚病院","横浜市立市民病院","川崎市立川崎病院",
+      "相模原市立病院","新潟市民病院","金沢市立病院",
+      "静岡市立清水病院","浜松市民病院","名古屋市立東部医療センター",
+      "名古屋市立西部医療センター","名古屋市立中央病院",
+      "京都市立病院","大阪市立総合医療センター","大阪市立住吉市民病院",
+      "神戸市立医療センター中央市民病院","神戸市立医療センター西市民病院",
+      "姫路市立城郷病院","広島市立安佐市民病院","広島市立広島市民病院",
+      "北九州市立医療センター","福岡市立病院","熊本市民病院",
+
+      // ── 県立・都道府県立病院 ──
+      "北海道立病院","青森県立中央病院","岩手県立中央病院",
+      "宮城県立こども病院","山形県立中央病院","福島県立医科大学附属病院",
+      "茨城県立中央病院","栃木県立がんセンター","群馬県立がんセンター",
+      "千葉県立病院","神奈川県立こども医療センター","神奈川県立がんセンター",
+      "新潟県立がんセンター新潟病院","富山県立中央病院",
+      "石川県立中央病院","福井県立病院","山梨県立中央病院",
+      "長野県立こども病院","岐阜県立多治見病院",
+      "静岡県立総合病院","静岡県立こども病院",
+      "三重県立総合医療センター","滋賀県立成人病センター",
+      "京都府立医科大学附属病院","大阪府立急性期・総合医療センター",
+      "大阪府立成人病センター","兵庫県立尼崎総合医療センター",
+      "兵庫県立がんセンター","奈良県立医科大学附属病院",
+      "和歌山県立医科大学附属病院","鳥取県立中央病院",
+      "島根県立中央病院","岡山県立がんセンター","広島県立病院",
+      "山口県立総合医療センター","徳島県立中央病院",
+      "香川県立中央病院","愛媛県立中央病院","高知県立幡多けんみん病院",
+      "福岡県立病院","佐賀県医療センター好生館","長崎県立病院",
+      "熊本県立病院","大分県立病院","宮崎県立宮崎病院",
+      "鹿児島県立姶良病院","沖縄県立中部病院","沖縄県立南部医療センター",
+
+      // ── マッチング人気病院（北海道・東北） ──
+      "手稲渓仁会病院","旭川厚生病院","旭川赤十字病院",
+      "KKR札幌医療センター","市立函館病院","苫小牧市立病院",
+      "釧路市立病院","帯広厚生病院","北海道医療センター",
+      "市立旭川病院","北見赤十字病院",
+      "岩手県立磐井病院","岩手県立中央病院","気仙沼市立病院",
+      "仙台オープン病院","東北公済病院","石巻赤十字病院",
+      "秋田赤十字病院","山形県立救命救急センター","いわき市医療センター",
+
+      // ── マッチング人気病院（関東） ──
+      "国保旭中央病院","亀田総合病院","東京ベイ・浦安市川医療センター",
+      "船橋市立医療センター","千葉西総合病院","新東京病院",
+      "国際医療福祉大学市川病院","東千葉メディカルセンター",
+      "横浜市立大学附属市民総合医療センター","藤沢市民病院",
+      "平塚市民病院","小田原市立病院","茅ヶ崎市立病院",
+      "横須賀市立うわまち病院","大和市立病院",
+      "草加市立病院","春日部市立医療センター","独協医科大学埼玉医療センター",
+      "埼玉石心会病院","深谷赤十字病院","太田記念病院",
+      "桐生厚生総合病院","高崎総合医療センター","公立富岡総合病院",
+      "足利赤十字病院","那須赤十字病院","茨城県立中央病院",
+      "水戸協同病院","筑波メディカルセンター病院",
+      "昭和大学江東豊洲病院","東京品川病院","大森赤十字病院",
+
+      // ── マッチング人気病院（中部・信越） ──
+      "相澤病院","長野市民病院","信州上田医療センター",
+      "松本市立病院","長野赤十字病院","諏訪赤十字病院",
+      "飯田市立病院","伊那中央病院",
+      "大垣市民病院","岐阜県総合医療センター","木沢記念病院",
+      "高山赤十字病院","多治見市民病院",
+      "市立四日市病院","伊勢赤十字病院","三重中央医療センター",
+      "松阪市民病院",
+      "富山市立富山市民病院","高岡市民病院",
+      "福井県済生会病院","福井赤十字病院",
+      "山梨赤十字病院","甲府市立甲府病院",
+      "磐田市立総合病院","浜松医療センター","静岡済生会病院",
+      "富士市立中央病院","焼津市立総合病院",
+
+      // ── マッチング人気病院（近畿） ──
+      "天理よろづ相談所病院","洛和会音羽病院","洛和会丸太町病院",
+      "京都第一赤十字病院","京都第二赤十字病院","京都民医連中央病院",
+      "市立奈良病院","南奈良総合医療センター",
+      "市立大津市民病院","滋賀県立総合病院","草津総合病院",
+      "大阪急性期・総合医療センター","大阪国際がんセンター",
+      "市立豊中病院","市立吹田市民病院","市立池田病院",
+      "市立東大阪医療センター","市立泉佐野病院",
+      "岸和田市民病院","泉大津市立病院",
+      "神戸市立西神戸医療センター","宝塚市立病院",
+      "兵庫県立尼崎総合医療センター","姫路赤十字病院",
+      "市立芦屋病院","加古川中央市民病院",
+      "和歌山生協病院",
+
+      // ── マッチング人気病院（中国・四国） ──
+      "倉敷中央病院","岡山医療センター","津山中央病院",
+      "土谷総合病院","広島共立病院","中国中央病院",
+      "山口赤十字病院","下関市立市民病院",
+      "松山市民病院","愛媛生協病院",
+      "高知医療センター","幡多けんみん病院",
+      "鳥取市立病院","米子医療センター",
+
+      // ── マッチング人気病院（九州・沖縄） ──
+      "飯塚病院","小倉記念病院","北九州市立八幡病院",
+      "産業医科大学病院","聖マリア病院","久留米総合病院",
+      "佐賀県医療センター好生館","長崎みなとメディカルセンター",
+      "熊本赤十字病院","熊本中央病院","熊本総合病院",
+      "大分県立病院","大分中村病院",
+      "宮崎市郡医師会病院","宮崎県立延岡病院",
+      "鹿児島市立病院","鹿児島生協病院",
+      "那覇市立病院","中頭病院","浦添総合病院",
+      "沖縄協同病院","豊見城中央病院",
+
+      // ── その他有名病院 ──
+      "虎の門病院","聖路加国際病院","国際医療福祉大学三田病院",
+      "NTT東日本関東病院","JCHO東京山手メディカルセンター",
+      "JCHO東京新宿メディカルセンター","JCHO東京城東病院",
+      "東京臨海病院","東京北医療センター","河北総合病院",
+      "日野市立病院","町田市民病院","八王子医療センター",
+      "JR東京総合病院","東京都保健医療公社豊島病院",
+      "江東病院","荏原病院","大久保病院","松沢病院",
+      "関東労災病院","横浜労災病院","神奈川労災病院",
+      "千葉労災病院","東京労災病院","大阪労災病院",
+      "独立行政法人労働者健康安全機構",
+      "防衛医科大学校病院","自衛隊中央病院","海上自衛隊横須賀病院",
+      "刑事施設医療センター","法務省矯正局",
+      "国立がん研究センター中央病院","国立がん研究センター東病院",
+      "国立国際医療研究センター病院","国立精神・神経医療研究センター病院",
+      "国立成育医療研究センター","国立循環器病研究センター",
+      "国立病院機構大阪南医療センター",
+      "大阪国際がんセンター","神戸市立西神戸医療センター",
+      "兵庫医療大学附属病院","関西電力病院","りんくう総合医療センター",
+      "府中病院","星ヶ丘医療センター","市立東大阪医療センター",
+      "市立池田病院","高槻病院","吹田市民病院",
+
+      // ── 追加：愛知・東海エリア ──
+      "岡崎市民病院","岡崎医療センター","刈谷豊田総合病院",
+      "豊橋市民病院","豊川市民病院","蒲郡市民病院",
+      "半田市立半田病院","常滑市民病院","春日井市民病院",
+      "小牧市民病院","犬山市民病院","江南厚生病院",
+      "一宮市立市民病院","稲沢市民病院","津島市民病院",
+      "西尾市民病院","碧南市民病院","安城更生病院",
+      "豊田厚生病院","みよし市民病院","岡崎城南病院",
+      "藤田医科大学岡崎医療センター","名古屋掖済会病院",
+      "名古屋記念病院","名古屋共立病院","名鉄病院",
+      "中京病院","総合大雄会病院","愛知県がんセンター",
+      "愛知医科大学病院","公立陶生病院","厚生連海南病院",
+      "厚生連尾西病院","厚生連加茂病院","厚生連知多厚生病院",
+
+      // ── 追加：全国その他 ──
+      "市立旭川病院","函館五稜郭病院","釧路赤十字病院",
+      "青森市民病院","盛岡赤十字病院","福島赤十字病院",
+      "水戸医療センター","土浦協同病院","つくばセントラル病院",
+      "前橋赤十字病院","済生会前橋病院","群馬中央病院",
+      "自治医科大学附属病院","自治医科大学附属さいたま医療センター",
+      "埼玉医科大学国際医療センター","所沢市民病院",
+      "新座志木中央総合病院","東松山医師会病院",
+      "千葉大学医学部附属病院","千葉県がんセンター",
+      "国保松戸市立総合医療センター","東京歯科大学市川総合病院",
+      "横浜市立みなと赤十字病院","横浜市立脳卒中・神経脊椎センター",
+      "川崎市立多摩病院","済生会横浜市東部病院",
+      "新潟市民病院","長岡赤十字病院","上越総合病院",
+      "金沢市立病院","公立能登総合病院","金沢医科大学病院",
+      "福井大学医学部附属病院","国立病院機構福井病院",
+      "山梨県立中央病院","諏訪中央病院","佐久総合病院",
+      "済生会滋賀県病院","彦根市立病院","長浜赤十字病院",
+      "大阪赤十字病院","住友病院","大阪警察病院",
+      "近畿大学奈良病院","市立奈良病院",
+      "神戸赤十字病院","西神戸医療センター","明石市立市民病院",
+      "鳥取大学医学部附属病院","松江赤十字病院",
+      "岡山赤十字病院","川崎医科大学総合医療センター",
+      "広島赤十字・原爆病院","呉医療センター","福山市民病院",
+      "山口大学医学部附属病院","山口赤十字病院","周南記念病院",
+      "徳島赤十字病院","高松赤十字病院","愛媛県立中央病院",
+      "高知赤十字病院","高知医療センター",
+      "九州医療センター","福岡赤十字病院","済生会福岡病院",
+      "長崎大学病院","長崎みなとメディカルセンター","佐世保市総合医療センター",
+      "熊本市民病院","済生会熊本病院","大分市医師会立アルメイダ病院",
+      "宮崎大学医学部附属病院","霧島市立医師会医療センター",
+      "鹿児島大学病院","今給黎総合病院",
+    ];
+
+    const DEFAULT_WEIGHTS = Object.fromEntries(CATEGORIES.map(c => [c.key, 2])); // 0=無視 1=低 2=普通 3=高 4=最重要
+    const WEIGHT_LABELS = ["無視","低","普通","高","最重要"];
+    const WEIGHT_COLORS = ["#d1ddd8","#a8c8b8","#52b89a","#0f8a6c","#085c48"];
+
+    const emptyRatings   = () => Object.fromEntries(CATEGORIES.map(c => [c.key, 0]));
+    const emptyChecklist = () => Object.fromEntries(CHECKLIST_ITEMS.map(c => [c.key, false]));
+
+    const EMPTY_FORM = {
+      status: "visited", // "visited" | "interested"
+      rank: 0,
+      thankYouSent: false,
+      actions: { thankYou: false, pastExam: false, revisitBooked: false },
+      wantToRevisit: false,
+      name: "", date: new Date().toISOString().split("T")[0],
+      department: "", chiefDoctor: "", thankYouDoctors: "",
+      salary: "", nightShifts: "", patientCount: "",
+      ratings: emptyRatings(), checklist: emptyChecklist(),
+      askMemo: "", goodPoints: "", badPoints: "", memo: "",
+      photos: [],
+    };
+
+    /* ===== StarRating ===== */
+    function StarRating({ value, onChange, readonly, small }) {
+      const [hover, setHover] = useState(0);
+      const size = small ? 13 : (readonly ? 16 : 22);
+      return (
+        <div style={{ display: "flex", gap: 1 }}>
+          {[1,2,3,4,5].map(s => (
+            <button key={s} type="button"
+              onClick={() => !readonly && onChange(s)}
+              onMouseEnter={() => !readonly && setHover(s)}
+              onMouseLeave={() => setHover(0)}
+              style={{
+                background: "none", border: "none",
+                cursor: readonly ? "default" : "pointer",
+                fontSize: size, padding: 0, lineHeight: 1,
+                color: s <= (hover || value) ? "#0f8a6c" : "#d1ddd8",
+                transition: "color .12s, transform .12s",
+                transform: !readonly && s <= hover ? "scale(1.25)" : "scale(1)",
+              }}
+            >★</button>
+          ))}
+        </div>
+      );
+    }
+
+    /* ===== RadarChart ===== */
+    function RadarChart({ ratings, size = 220 }) {
+      const cx = size/2, cy = size/2, r = size * 0.33;
+      const n = CATEGORIES.length;
+      const angle = i => Math.PI*2*i/n - Math.PI/2;
+      const pt = (i, val) => ({
+        x: cx + r*(val/5)*Math.cos(angle(i)),
+        y: cy + r*(val/5)*Math.sin(angle(i)),
+      });
+      const values     = CATEGORIES.map(c => ratings[c.key] || 0);
+      const dataPoints = values.map((v,i) => pt(i,v));
+      return (
+        <svg viewBox={`0 0 ${size} ${size}`} style={{ width:"100%", maxWidth: size }}>
+          {[1,2,3,4,5].map(lv => (
+            <polygon key={lv}
+              points={CATEGORIES.map((_,i) => { const p=pt(i,lv); return `${p.x},${p.y}`; }).join(" ")}
+              fill="none" stroke="#d1ddd8"
+              strokeWidth={lv===5 ? 1.5 : 0.5} opacity={0.7}
+            />
+          ))}
+          {CATEGORIES.map((_,i) => {
+            const p = pt(i,5);
+            return <line key={i} x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#d1ddd8" strokeWidth={0.5}/>;
+          })}
+          <polygon
+            points={dataPoints.map(p=>`${p.x},${p.y}`).join(" ")}
+            fill="rgba(15,138,108,0.18)" stroke="#0f8a6c" strokeWidth={2}
+          />
+          {dataPoints.map((p,i) => <circle key={i} cx={p.x} cy={p.y} r={3} fill="#0f8a6c"/>)}
+          {CATEGORIES.map((c,i) => {
+            const lr = r + 26;
+            return (
+              <text key={i}
+                x={cx + lr*Math.cos(angle(i))}
+                y={cy + lr*Math.sin(angle(i))}
+                textAnchor="middle" dominantBaseline="central"
+                style={{ fontSize: 9, fill: "#4a6358", fontFamily:"'Zen Kaku Gothic New',sans-serif" }}
+              >{c.icon} {c.label}</text>
+            );
+          })}
+        </svg>
+      );
+    }
+
+    /* ===== HospitalCard ===== */
+    function HospitalCard({ hospital, onClick, animDelay, weights, hasCustomWeights }) {
+      const isInterested = hospital.status === "interested";
+      const totalW = CATEGORIES.reduce((s,c) => s + (weights[c.key] > 0 ? weights[c.key] : 0), 0);
+      const avg = totalW > 0
+        ? CATEGORIES.reduce((s,c) => s + (hospital.ratings[c.key]||0)*(weights[c.key]>0?weights[c.key]:0), 0) / totalW
+        : 0;
+      const bgColor = avg >= 4
+        ? "linear-gradient(135deg,#0f8a6c,#12a67e)"
+        : avg >= 3 ? "linear-gradient(135deg,#2d9e80,#52b89a)"
+        : "linear-gradient(135deg,#7a9489,#96afa5)";
+      return (
+        <div onClick={onClick}
+          style={{
+            background: isInterested ? "#fafdf9" : hospital.wantToRevisit ? "#f0faf6" : "#fff",
+            borderRadius:16, padding:"18px 20px", cursor:"pointer",
+            border: isInterested ? "1.5px dashed #a8c8b8" : hospital.wantToRevisit ? "1.5px solid #0f8a6c" : "1px solid #e4ece8",
+            boxShadow:"0 1px 4px rgba(15,60,40,0.05)",
+            transition:"all .22s cubic-bezier(.4,0,.2,1)",
+            animation: `fadeUp .35s ease ${animDelay||0}s both`,
+          }}
+          onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-3px)";e.currentTarget.style.boxShadow="0 8px 24px rgba(15,60,40,0.1)";}}
+          onMouseLeave={e=>{e.currentTarget.style.transform="";e.currentTarget.style.boxShadow="0 1px 4px rgba(15,60,40,0.05)";}}
+        >
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+            <div style={{ flex:1 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:6, flexWrap:"wrap" }}>
+                <div style={{ fontSize:16, fontWeight:700, color:"#1a2e24" }}>{hospital.name}</div>
+                {isInterested && (
+                  <span style={{ fontSize:10, fontWeight:700, color:"#7a9489", background:"#eef5f1", padding:"2px 7px", borderRadius:5, whiteSpace:"nowrap" }}>👀 気になる</span>
+                )}
+                {!isInterested && hospital.visitCount && (
+                  <span style={{ fontSize:10, fontWeight:700, color:"#0f8a6c", background:"#eef5f1", padding:"2px 7px", borderRadius:5, whiteSpace:"nowrap" }}>{hospital.visitCount}</span>
+                )}
+                {!isInterested && hospital.visitPurpose && (
+                  <span style={{ fontSize:10, fontWeight:600, color:"#7a9489", background:"#f5f8f6", padding:"2px 7px", borderRadius:5, whiteSpace:"nowrap" }}>{hospital.visitPurpose}</span>
+                )}
+              </div>
+              <div style={{ fontSize:12, color:"#7a9489", marginTop:2 }}>
+                {hospital.department}{hospital.department&&" · "}
+                {isInterested ? "見学日未定" : hospital.date}
+              </div>
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4, flexShrink:0 }}>
+              {isInterested ? (
+                <div style={{ background:"linear-gradient(135deg,#c8d8d0,#a8b8b0)", color:"#fff", borderRadius:10, padding:"5px 10px", fontSize:11, fontWeight:700 }}>未見学</div>
+              ) : (
+                <div style={{ background:bgColor, color:"#fff", borderRadius:10, padding:"5px 11px", fontSize:14, fontWeight:800, minWidth:40, textAlign:"center", position:"relative" }}>
+                  {avg.toFixed(1)}
+                  {hasCustomWeights && <span style={{ fontSize:9, position:"absolute", top:-4, right:-4, background:"#f0c040", borderRadius:"50%", width:14, height:14, display:"flex", alignItems:"center", justifyContent:"center" }}>⚖</span>}
+                </div>
+              )}
+              {hospital.rank > 0 && (
+                <div style={{
+                  fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:5, whiteSpace:"nowrap",
+                  background: hospital.rank===1 ? "linear-gradient(135deg,#f0c040,#e8a820)"
+                    : hospital.rank<=3 ? "linear-gradient(135deg,#0f8a6c,#12a67e)"
+                    : "#eef5f1",
+                  color: hospital.rank<=3 ? "#fff" : "#0f8a6c",
+                }}>第{hospital.rank}志望</div>
+              )}
+              {hospital.wantToRevisit && (
+                <div style={{ fontSize:11, fontWeight:700, color:"#0f8a6c", background:"#d6f0e8", padding:"2px 8px", borderRadius:5, whiteSpace:"nowrap" }}>🔁 再訪予定</div>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    /* ===== EmailModal ===== */
+    /* ===== WeightModal ===== */
+    function WeightModal({ weights, onChange, onClose }) {
+      const [local, setLocal] = useState({...weights});
+      const isDefault = CATEGORIES.every(c => local[c.key] === 2);
+      return (
+        <div style={{
+          position:"fixed", inset:0, background:"rgba(10,30,20,0.5)", zIndex:300,
+          display:"flex", alignItems:"flex-end", justifyContent:"center",
+          backdropFilter:"blur(5px)",
+        }} onClick={onClose}>
+          <div onClick={e=>e.stopPropagation()} style={{
+            background:"#fff", borderRadius:"22px 22px 0 0", width:"100%", maxWidth:520,
+            maxHeight:"88vh", overflowY:"auto", padding:"22px 20px 36px",
+            animation:"fadeUp .3s ease",
+          }}>
+            <div style={{ width:36, height:4, borderRadius:2, background:"#d1ddd8", margin:"0 auto 16px" }}/>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
+              <div style={{ fontSize:16, fontWeight:900, color:"#1a2e24" }}>⚖️ 評価の重み設定</div>
+              {!isDefault && (
+                <button onClick={()=>setLocal({...DEFAULT_WEIGHTS})}
+                  style={{ fontSize:12, color:"#7a9489", background:"none", border:"1px solid #d1ddd8", borderRadius:7, padding:"4px 10px", cursor:"pointer" }}
+                >リセット</button>
+              )}
+            </div>
+            <div style={{ fontSize:12, color:"#7a9489", marginBottom:18 }}>
+              自分にとって大切な項目の重みを上げると、総合スコアに反映されます
+            </div>
+            {CATEGORIES.map(c => (
+              <div key={c.key} style={{ marginBottom:18 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                  <span style={{ fontSize:14, fontWeight:600 }}>{c.icon} {c.label}</span>
+                  <span style={{
+                    fontSize:12, fontWeight:700, padding:"2px 10px", borderRadius:6,
+                    background: WEIGHT_COLORS[local[c.key]] + "22",
+                    color: WEIGHT_COLORS[local[c.key]],
+                  }}>{WEIGHT_LABELS[local[c.key]]}</span>
+                </div>
+                <div style={{ display:"flex", gap:6 }}>
+                  {WEIGHT_LABELS.map((label, i) => (
+                    <button key={i} type="button"
+                      onClick={()=>setLocal({...local, [c.key]: i})}
+                      style={{
+                        flex:1, padding:"8px 2px", borderRadius:8, fontSize:11, fontWeight:700,
+                        cursor:"pointer", transition:"all .13s",
+                        border: local[c.key]===i ? `2px solid ${WEIGHT_COLORS[i]}` : "2px solid #e4ece8",
+                        background: local[c.key]===i ? WEIGHT_COLORS[i]+"22" : "#fff",
+                        color: local[c.key]===i ? WEIGHT_COLORS[i] : "#a8b8b0",
+                      }}
+                    >{label}</button>
+                  ))}
+                </div>
+              </div>
+            ))}
+            <button onClick={()=>{ onChange(local); onClose(); }}
+              style={{
+                width:"100%", padding:"14px", borderRadius:13, border:"none",
+                background:"linear-gradient(135deg,#0f8a6c,#12a67e)",
+                color:"#fff", fontWeight:800, fontSize:15, cursor:"pointer",
+                boxShadow:"0 4px 16px rgba(15,138,108,0.25)",
+              }}
+            >この設定で反映する</button>
+          </div>
+        </div>
+      );
+    }
+
+    function EmailModal({ hospital, onClose }) {
+      const [copied, setCopied] = useState(false);
+
+      // 見学日を自然な表現に変換
+      const visitDateLabel = (() => {
+        if (!hospital.date) return "先日は";
+        const d = new Date(hospital.date);
+        const today = new Date(); today.setHours(0,0,0,0);
+        const diff = Math.floor((today - d) / 86400000);
+        if (diff === 0) return "本日は";
+        if (diff === 1) return "昨日は";
+        if (diff <= 7) return "先日は";
+        return `${d.getMonth()+1}月${d.getDate()}日は`;
+      })();
+
+      // 良かった点・メモから印象的だった一文を自動生成
+      const impressionLine = (() => {
+        const src = [hospital.goodPoints, hospital.memo, hospital.askMemo].filter(Boolean).join(" ");
+        if (!src.trim()) return `熱心に働くスタッフの皆様のお姿が非常に印象的であり、貴院での初期研修への気持ちがますます高まっているところです。`;
+        // 最初の句点か改行で区切った最初の一文を抽出
+        const first = src.split(/[。\n]/)[0].trim();
+        const sentence = first.length > 5 && first.length <= 60 ? first : src.slice(0, 50).trim();
+        return `特に、${sentence}という点が非常に印象的でした。貴院での初期研修への気持ちがますます高まっているところです。`;
+      })();
+
+      const template =
+`件名：病院見学のお礼
+
+${hospital.name} ${hospital.department || ""}
+${hospital.thankYouDoctors ? (hospital.thankYouDoctors.includes("先生") ? hospital.thankYouDoctors : hospital.thankYouDoctors + " 先生") : "ご担当者"} 様
+
+お世話になっております。
+〇〇大学医学部◯年の〇〇〇〇です。
+
+${visitDateLabel}お忙しい中、私のためにお時間を割いてくださり、誠にありがとうございました。
+
+${hospital.department || "貴科"}の先生や研修医の先生に直接お話を聞くことができ、大変有意義な時間を過ごすことができました。
+
+${impressionLine}
+
+今後、より一層、学業および病院実習に励んでいく所存です。
+まずは取り急ぎ、御礼申し上げます。
+
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊
+〇〇大学医学部◯年　〇〇　〇〇
+E-mail : 〇〇〇〇@gmail.com
+TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
+＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊`;
+
+      const copy = () => {
+        navigator.clipboard.writeText(template).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2500);
+        }).catch(() => {
+          // フォールバック
+          const ta = document.createElement("textarea");
+          ta.value = template;
+          document.body.appendChild(ta);
+          ta.select();
+          document.execCommand("copy");
+          document.body.removeChild(ta);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2500);
+        });
+      };
+
+      return (
+        <div style={{
+          position:"fixed", inset:0, background:"rgba(10,30,20,0.5)", zIndex:300,
+          display:"flex", alignItems:"flex-end", justifyContent:"center",
+          backdropFilter:"blur(5px)",
+        }} onClick={onClose}>
+          <div onClick={e=>e.stopPropagation()} style={{
+            background:"#fff", borderRadius:"22px 22px 0 0", width:"100%", maxWidth:520,
+            maxHeight:"88vh", overflowY:"auto", padding:"22px 20px 32px",
+            animation:"fadeUp .3s ease",
+          }}>
+            <div style={{ width:36, height:4, borderRadius:2, background:"#d1ddd8", margin:"0 auto 16px" }}/>
+            <div style={{ fontSize:16, fontWeight:900, color:"#1a2e24", marginBottom:12 }}>📧 お礼メールテンプレート</div>
+            <div style={{ fontSize:12, color:"#7a9489", marginBottom:10 }}>〇〇の部分をご自身の情報に書き換えてください</div>
+            <textarea readOnly value={template} rows={18}
+              style={{
+                width:"100%", padding:"12px 14px", borderRadius:10,
+                border:"1px solid #d1ddd8", background:"#f5f8f6",
+                fontSize:13, color:"#1a2e24", lineHeight:1.7, resize:"none",
+              }}
+            />
+            <button onClick={copy} style={{
+              width:"100%", marginTop:12, padding:"14px", borderRadius:12, border:"none",
+              background: copied ? "#52b89a" : "linear-gradient(135deg,#0f8a6c,#12a67e)",
+              color:"#fff", fontWeight:700, fontSize:14, cursor:"pointer",
+              transition:"background .3s",
+            }}>
+              {copied ? "✅ コピーしました！" : "📋 クリップボードにコピー"}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    /* ===== Main App ===== */
+    function App() {
+      const [hospitals, setHospitals] = useState(() => {
+        try { return JSON.parse(localStorage.getItem("byouin_v2") || "[]"); }
+        catch { return []; }
+      });
+      const [view, setView]             = useState("list");
+      const [form, setForm]             = useState({...EMPTY_FORM, ratings:emptyRatings(), checklist:emptyChecklist(), photos:[]});
+      const [selected, setSelected]     = useState(null);
+      const [editId, setEditId]         = useState(null);
+      const [searchQ, setSearchQ]       = useState("");
+      const [sortBy, setSortBy]         = useState("date");
+      const [confirmDel, setConfirmDel] = useState(null);
+      const [showEmail, setShowEmail]   = useState(false);
+      const [showWeights, setShowWeights] = useState(false);
+      const [settingsSection, setSettingsSection] = useState("weights"); // "weights"|"data"|"checklist"
+      const [compareSelected, setCompareSelected] = useState([]);
+      const [packingChecks, setPackingChecks] = useState({});
+      const DEFAULT_PACKING = [
+        "💳 財布（ホテル代含む）","📱 携帯・充電器","👔 着替え・下着",
+        "⏰ 目覚まし時計","🪪 身分証明書・学生証","🧴 洗顔グッズ",
+        "🧥 白衣","🩺 聴診器","🖊️ 筆記用具・メモ帳",
+        "💾 USB（過去問用）","⌚ 腕時計","🏷️ ネームプレート",
+        "👗 着圧ソックス","🎒 セカンドバッグ","📱 iPad・タブレット",
+      ];
+      const [packingItems, setPackingItems] = useState(() => {
+        try { return JSON.parse(localStorage.getItem("packingItems") || "null") || DEFAULT_PACKING; }
+        catch { return DEFAULT_PACKING; }
+      });
+      React.useEffect(() => {
+        localStorage.setItem("packingItems", JSON.stringify(packingItems));
+      }, [packingItems]);
+      const [weights, setWeights] = useState(() => {
+        try { return JSON.parse(localStorage.getItem("byouin_weights") || "null") || {...DEFAULT_WEIGHTS}; }
+        catch { return {...DEFAULT_WEIGHTS}; }
+      });
+
+      useEffect(() => {
+        try { localStorage.setItem("byouin_weights", JSON.stringify(weights)); } catch {}
+      }, [weights]);
+
+      const hasCustomWeights = CATEGORIES.some(c => weights[c.key] !== 2);
+
+      useEffect(() => {
+        try { localStorage.setItem("byouin_v2", JSON.stringify(hospitals)); } catch {}
+      }, [hospitals]);
+
+      const avgRating = h => {
+        const totalWeight = CATEGORIES.reduce((s,c) => s + (weights[c.key] > 0 ? weights[c.key] : 0), 0);
+        if (totalWeight === 0) return 0;
+        const weighted = CATEGORIES.reduce((s,c) => s + (h.ratings[c.key]||0) * (weights[c.key] > 0 ? weights[c.key] : 0), 0);
+        return weighted / totalWeight;
+      };
+
+      const filtered = hospitals
+        .filter(h => {
+          const q = searchQ.toLowerCase();
+          return (!q || h.name.toLowerCase().includes(q) || (h.department||"").toLowerCase().includes(q))
+;
+        })
+        .sort((a,b) => {
+          if (sortBy==="date")   return b.date.localeCompare(a.date);
+          if (sortBy==="rating") return avgRating(b) - avgRating(a);
+          return a.name.localeCompare(b.name);
+        });
+
+
+      const saveHospital = () => {
+        if (!form.name.trim()) return;
+        if (editId) {
+          setHospitals(prev => prev.map(h => h.id===editId ? {...form, id:editId} : h));
+        } else {
+          setHospitals(prev => [...prev, {...form, id: Date.now().toString()}]);
+        }
+        resetForm();
+        setView("list");
+      };
+
+      const exportData = () => {
+        const json = JSON.stringify(hospitals, null, 2);
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `病院見学ノート_${new Date().toISOString().split("T")[0]}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      const importData = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          try {
+            const data = JSON.parse(ev.target.result);
+            if (Array.isArray(data)) {
+              setHospitals(prev => {
+                const existingIds = new Set(prev.map(h => h.id));
+                const newItems = data.filter(h => !existingIds.has(h.id));
+                return [...prev, ...newItems];
+              });
+              alert(`${data.length}件をインポートしました`);
+            }
+          } catch { alert("ファイルの読み込みに失敗しました"); }
+        };
+        reader.readAsText(file);
+        e.target.value = "";
+      };
+
+      const resetForm = () => {
+        setForm({...EMPTY_FORM, ratings:emptyRatings(), checklist:emptyChecklist(), photos:[], date:new Date().toISOString().split("T")[0]});
+        setEditId(null);
+      };
+
+      const startEdit = h => {
+        setForm({
+          ...EMPTY_FORM, ...h,
+          ratings:   {...emptyRatings(),   ...h.ratings},
+          checklist: {...emptyChecklist(), ...(h.checklist||{})},
+          photos:    h.photos || [],
+        });
+        setEditId(h.id);
+        setSelected(null);
+        setView("form");
+      };
+
+      const deleteHospital = id => {
+        setHospitals(prev => prev.filter(h => h.id!==id));
+        setSelected(null);
+        setConfirmDel(null);
+      };
+
+      const handlePhoto = e => {
+        Array.from(e.target.files).forEach(file => {
+          const reader = new FileReader();
+          reader.onload = ev => {
+            setForm(prev => ({...prev, photos:[...(prev.photos||[]), ev.target.result]}));
+          };
+          reader.readAsDataURL(file);
+        });
+        e.target.value = "";
+      };
+
+      /* --- スタイル定数 --- */
+      const labelStyle = {
+        display:"block", fontSize:12, fontWeight:700,
+        color:"#4a6358", marginBottom:5, marginTop:16,
+      };
+      const inputStyle = {
+        width:"100%", padding:"11px 14px", borderRadius:10,
+        border:"1px solid #d1ddd8", background:"#fff",
+        fontSize:14, color:"#1a2e24",
+      };
+      const sectionTitle = {
+        fontSize:13, fontWeight:900, color:"#0f8a6c",
+        letterSpacing:0.5, marginTop:24, marginBottom:4,
+        paddingBottom:6, borderBottom:"2px solid #eef5f1",
+      };
+
+      return (
+        <div style={{ minHeight:"100vh", background:"linear-gradient(170deg,#f0f6f3 0%,#e8f0eb 50%,#f5f8f6 100%)", color:"#1a2e24" }}>
+
+          {/* ── HEADER ── */}
+          <div style={{
+            background:"linear-gradient(135deg,#0f8a6c 0%,#0a7159 55%,#085c48 100%)",
+            padding:"24px 20px 20px", color:"#fff",
+            position:"relative", overflow:"hidden",
+          }}>
+            <div style={{ position:"absolute", top:-40, right:-40, width:150, height:150, borderRadius:"50%", background:"rgba(255,255,255,0.06)" }}/>
+            <div style={{ position:"absolute", bottom:-20, left:50, width:80, height:80, borderRadius:"50%", background:"rgba(255,255,255,0.04)" }}/>
+            <div style={{ fontSize:11, fontWeight:500, opacity:0.7, letterSpacing:2.5, textTransform:"uppercase", marginBottom:4 }}>Hospital Review</div>
+            <div style={{ fontSize:24, fontWeight:900, letterSpacing:-0.5 }}>病院見学ノート</div>
+            <div style={{ fontSize:12, opacity:0.65, marginTop:3 }}>見学した病院の評価を記録・比較</div>
+          </div>
+
+          {/* ── NAV ── */}
+          <nav className="no-print" style={{ display:"flex", background:"#fff", borderBottom:"1px solid #e4ece8", position:"sticky", top:0, zIndex:50 }}>
+            {[
+              { key:"list", label:"📋 一覧", count: hospitals.length,
+                countVisited: hospitals.filter(h=>h.status!=="interested").length,
+                countInterested: hospitals.filter(h=>h.status==="interested").length },
+              { key:"form",     label:"✏️ 記録" },
+              { key:"compare",  label:"📊 比較" },
+              { key:"settings", label:"⚙️ 設定" },
+            ].map(tab => (
+              <button key={tab.key}
+                onClick={() => {
+                  setView(tab.key);
+                  if (tab.key==="form" && !editId) resetForm();
+                }}
+                style={{
+                  flex:1, padding:"13px 6px", border:"none", cursor:"pointer",
+                  background: view===tab.key ? "#f0f6f3" : "#fff",
+                  borderBottom: view===tab.key ? "3px solid #0f8a6c" : "3px solid transparent",
+                  color: view===tab.key ? "#0f8a6c" : "#7a9489",
+                  fontWeight: view===tab.key ? 700 : 500, fontSize:13,
+                  transition:"all .18s",
+                }}
+              >
+                {tab.label}
+                {tab.count !== undefined && (
+                  <span style={{ fontSize:11, opacity:0.6 }}>
+                    {" "}({tab.countVisited}{tab.countInterested > 0 ? `+${tab.countInterested}👀` : ""})
+                  </span>
+                )}
+              </button>
+            ))}
+          </nav>
+
+          <div style={{ maxWidth:520, margin:"0 auto", padding:"14px 14px 100px" }}>
+
+            {/* ══════════ LIST VIEW ══════════ */}
+            {view==="list" && (
+              <div style={{ animation:"fadeUp .32s ease" }}>
+                {/* 検索・フィルター */}
+                <div style={{ marginBottom:14 }}>
+                  <input
+                    placeholder="🔍 病院名・診療科で検索…"
+                    value={searchQ}
+                    onChange={e => setSearchQ(e.target.value)}
+                    style={{ ...inputStyle, borderRadius:12, padding:"12px 16px", fontSize:14 }}
+                  />
+                  <div style={{ display:"flex", gap:8, marginTop:9, flexWrap:"wrap", alignItems:"center" }}>
+                    <select value={sortBy} onChange={e=>setSortBy(e.target.value)}
+                      style={{ padding:"6px 10px", borderRadius:8, border:"1px solid #d1ddd8", fontSize:12, color:"#4a6358", background:"#fff" }}
+                    >
+                      <option value="date">日付順</option>
+                      <option value="rating">評価順</option>
+                      <option value="name">名前順</option>
+                    </select>
+                  </div>
+                </div>
+
+                {filtered.length === 0 ? (
+                  <div style={{ textAlign:"center", padding:"60px 20px", color:"#96afa5" }}>
+                    <img src="data:image/png;base64,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" alt="病院" style={{ width:120, height:120, objectFit:"contain", marginBottom:12, mixBlendMode:"multiply" }}/>
+                    <div style={{ fontSize:16, fontWeight:700, marginBottom:6 }}>まだ記録がありません</div>
+                    <div style={{ fontSize:13 }}>「記録」タブから病院見学の評価を追加しましょう</div>
+                  </div>
+                ) : (
+                  <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                    {filtered.map((h,i) => (
+                      <HospitalCard key={h.id} hospital={h} animDelay={i*0.04}
+                        weights={weights} hasCustomWeights={hasCustomWeights}
+                        onClick={() => { setSelected(h); setConfirmDel(null); }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ══════════ DETAIL MODAL ══════════ */}
+            {selected && (
+              <div className="print-modal-overlay" style={{
+                position:"fixed", inset:0, background:"rgba(10,30,20,0.45)", zIndex:100,
+                display:"flex", alignItems:"flex-end", justifyContent:"center",
+                backdropFilter:"blur(4px)",
+              }} onClick={() => { setSelected(null); setConfirmDel(null); }}>
+                <div className="print-modal-inner" onClick={e=>e.stopPropagation()} style={{
+                  background:"#fff", borderRadius:"22px 22px 0 0",
+                  width:"100%", maxWidth:520, maxHeight:"93vh",
+                  overflowY:"auto", padding:"22px 18px 32px",
+                  animation:"fadeUp .28s ease",
+                }}>
+                  <div style={{ width:36, height:4, borderRadius:2, background:"#d1ddd8", margin:"0 auto 16px" }}/>
+
+                  <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:3 }}>
+                    <div style={{ fontSize:20, fontWeight:900, color:"#1a2e24" }}>{selected.name}</div>
+                    {selected.status === "interested" && (
+                      <span style={{ fontSize:11, fontWeight:700, color:"#7a9489", background:"#eef5f1", padding:"3px 9px", borderRadius:6 }}>👀 気になる</span>
+                    )}
+                    {selected.status !== "interested" && selected.visitCount && (
+                      <span style={{ fontSize:11, fontWeight:700, color:"#0f8a6c", background:"#eef5f1", padding:"3px 9px", borderRadius:6 }}>{selected.visitCount}</span>
+                    )}
+                    {selected.status !== "interested" && selected.visitPurpose && (
+                      <span style={{ fontSize:11, fontWeight:600, color:"#7a9489", background:"#f5f8f6", padding:"3px 9px", borderRadius:6 }}>{selected.visitPurpose}</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize:13, color:"#7a9489", marginBottom:16 }}>
+                    {selected.department}{selected.department&&" · "}
+                    {selected.status === "interested" ? "見学日未定" : selected.date}
+                  </div>
+
+                  {/* レーダーチャート・評価グリッド（見学済みのみ） */}
+                  {selected.status !== "interested" && (
+                    <>
+                      <div style={{ display:"flex", justifyContent:"center", marginBottom:14 }}>
+                        <RadarChart ratings={selected.ratings} size={220}/>
+                      </div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginBottom:16 }}>
+                        {CATEGORIES.map(c => (
+                          <div key={c.key} style={{
+                            display:"flex", justifyContent:"space-between", alignItems:"center",
+                            padding:"7px 11px", background:"#f5f8f6", borderRadius:9,
+                          }}>
+                            <span style={{ fontSize:11 }}>{c.icon} {c.label}</span>
+                            <StarRating value={selected.ratings[c.key]} readonly small/>
+                          </div>
+                        ))}
+                      </div>
+                      <div style={{ marginBottom:14 }}>
+                        <div style={{ fontSize:12, fontWeight:700, color:"#4a6358", marginBottom:6 }}>✅ みることチェックリスト</div>
+                        <div style={{ background:"#f5f8f6", borderRadius:10, padding:"10px 12px" }}>
+                          {CHECKLIST_ITEMS.map(item => (
+                            <div key={item.key} style={{
+                              fontSize:12, padding:"3px 0",
+                              color: (selected.checklist||{})[item.key] ? "#1a2e24" : "#b0c4bb",
+                            }}>
+                              {(selected.checklist||{})[item.key] ? "✅" : "☐"} {item.label}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+
+                  {/* 医師情報 */}
+                  {(selected.chiefDoctor||selected.thankYouDoctors||selected.salary||selected.nightShifts) && (
+                    <div style={{ background:"#f5f8f6", borderRadius:10, padding:"10px 14px", marginBottom:14 }}>
+                      {selected.chiefDoctor     && <div style={{ fontSize:13, color:"#4a6358", marginBottom:3 }}>👔 部長：{selected.chiefDoctor}</div>}
+                      {selected.thankYouDoctors && <div style={{ fontSize:13, color:"#4a6358", marginBottom:3 }}>🙏 お世話になった先生：{selected.thankYouDoctors}</div>}
+                      {selected.salary          && <div style={{ fontSize:13, color:"#4a6358", marginBottom:3 }}>💰 給与：{selected.salary}</div>}
+                      {selected.nightShifts     && <div style={{ fontSize:13, color:"#4a6358", marginBottom:3 }}>🌙 月当直回数：{selected.nightShifts}</div>}
+                      {selected.patientCount    && <div style={{ fontSize:13, color:"#4a6358", marginBottom:3 }}>🛏️ 平均受け持ち患者数：{selected.patientCount}</div>}
+                      {selected.recruitUrl      && (
+                        <div style={{ fontSize:13, marginTop:2 }}>
+                          <a href={selected.recruitUrl} target="_blank" rel="noopener noreferrer"
+                            style={{ color:"#0f8a6c", fontWeight:600, textDecoration:"none" }}
+                            onClick={e=>e.stopPropagation()}
+                          >🔗 募集要項を開く →</a>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 聞いたこと */}
+                  {selected.askMemo && (
+                    <div style={{ marginBottom:12 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#4a6358", marginBottom:4 }}>❓ 聞いたこと・回答</div>
+                      <div style={{ fontSize:13, color:"#3a5a4a", lineHeight:1.7, background:"#f5f8f6", padding:"10px 14px", borderRadius:10, whiteSpace:"pre-wrap" }}>{selected.askMemo}</div>
+                    </div>
+                  )}
+
+                  {selected.goodPoints && (
+                    <div style={{ marginBottom:10 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#0f8a6c", marginBottom:4 }}>👍 良かった点</div>
+                      <div style={{ fontSize:13, color:"#3a5a4a", lineHeight:1.65, background:"#f0f9f5", padding:"10px 14px", borderRadius:10, whiteSpace:"pre-wrap" }}>{selected.goodPoints}</div>
+                    </div>
+                  )}
+
+                  {selected.badPoints && (
+                    <div style={{ marginBottom:10 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#c4643a", marginBottom:4 }}>👎 気になった点</div>
+                      <div style={{ fontSize:13, color:"#3a5a4a", lineHeight:1.65, background:"#fef6f2", padding:"10px 14px", borderRadius:10, whiteSpace:"pre-wrap" }}>{selected.badPoints}</div>
+                    </div>
+                  )}
+
+                  {selected.memo && (
+                    <div style={{ marginBottom:14 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#4a6358", marginBottom:4 }}>📝 メモ</div>
+                      <div style={{ fontSize:13, color:"#3a5a4a", lineHeight:1.65, background:"#f5f8f6", padding:"10px 14px", borderRadius:10, whiteSpace:"pre-wrap" }}>{selected.memo}</div>
+                    </div>
+                  )}
+
+                  {/* マッチング対策 */}
+                  {(selected.matchSelection||selected.matchGradeWeight||selected.matchConnection||selected.matchPastExam||selected.matchInterview||selected.matchMemo) && (
+                    <div style={{ marginBottom:14 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#4a6358", marginBottom:8 }}>🎯 マッチング対策</div>
+                      <div style={{ background:"#f5f8f6", borderRadius:10, padding:"10px 14px" }}>
+                        {selected.matchSelection   && <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", borderBottom:"1px solid #e8f0eb", fontSize:13 }}><span style={{ color:"#7a9489" }}>選考方法</span><span style={{ fontWeight:600, color:"#1a2e24" }}>{selected.matchSelection}</span></div>}
+                        {selected.matchGradeWeight && <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", borderBottom:"1px solid #e8f0eb", fontSize:13 }}><span style={{ color:"#7a9489" }}>成績・CBT重視度</span><span style={{ fontWeight:600, color:"#1a2e24" }}>{selected.matchGradeWeight}</span></div>}
+                        {selected.matchConnection  && <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", borderBottom:"1px solid #e8f0eb", fontSize:13 }}><span style={{ color:"#7a9489" }}>コネ・顔売りの影響</span><span style={{ fontWeight:600, color:"#1a2e24" }}>{selected.matchConnection}</span></div>}
+                        {selected.matchPastExam    && <div style={{ display:"flex", justifyContent:"space-between", padding:"4px 0", fontSize:13 }}><span style={{ color:"#7a9489" }}>過去問</span><span style={{ fontWeight:600, color:"#1a2e24" }}>{selected.matchPastExam}</span></div>}
+                      </div>
+                      {selected.matchInterview && (
+                        <div style={{ marginTop:8 }}>
+                          <div style={{ fontSize:11, fontWeight:700, color:"#4a6358", marginBottom:3 }}>面接で聞かれたこと</div>
+                          <div style={{ fontSize:13, color:"#3a5a4a", lineHeight:1.65, background:"#fff8f0", padding:"10px 14px", borderRadius:10, whiteSpace:"pre-wrap", border:"1px solid #f0e0c8" }}>{selected.matchInterview}</div>
+                        </div>
+                      )}
+                      {selected.matchMemo && (
+                        <div style={{ marginTop:8 }}>
+                          <div style={{ fontSize:11, fontWeight:700, color:"#4a6358", marginBottom:3 }}>試験対策・その他</div>
+                          <div style={{ fontSize:13, color:"#3a5a4a", lineHeight:1.65, background:"#f5f8f6", padding:"10px 14px", borderRadius:10, whiteSpace:"pre-wrap" }}>{selected.matchMemo}</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 写真 */}
+                  {selected.photos && selected.photos.length > 0 && (
+                    <div style={{ marginBottom:14 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#4a6358", marginBottom:6 }}>📷 写真</div>
+                      <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+                        {selected.photos.map((p,i) => (
+                          <img key={i} src={p} alt="" style={{ width:90, height:90, objectFit:"cover", borderRadius:10, border:"1px solid #e4ece8" }}/>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 志望順位 */}
+                  {selected.status !== "interested" && (
+                    <div style={{ marginBottom:8 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#4a6358", marginBottom:8 }}>🏆 志望順位</div>
+                      <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+                        {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                          <button key={n} type="button"
+                            onClick={() => {
+                              const r = selected.rank===n ? 0 : n;
+                              const updated = {...selected, rank: r};
+                              setHospitals(prev => prev.map(h => h.id===selected.id ? updated : h));
+                              setSelected(updated);
+                            }}
+                            style={{
+                              width:36, height:36, borderRadius:9, fontSize:13, fontWeight:800, cursor:"pointer",
+                              border: selected.rank===n ? "none" : "1.5px solid #e4ece8",
+                              background: selected.rank===n
+                                ? (n===1 ? "linear-gradient(135deg,#f0c040,#e8a820)"
+                                  : n<=3 ? "linear-gradient(135deg,#0f8a6c,#12a67e)"
+                                  : "#eef5f1")
+                                : "#fff",
+                              color: selected.rank===n ? "#fff" : "#a8b8b0",
+                              transition:"all .13s",
+                            }}
+                          >{n}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 見学後アクション */}
+                  {selected.status !== "interested" && (
+                    <div style={{ marginBottom:10 }}>
+                      <div style={{ fontSize:12, fontWeight:700, color:"#4a6358", marginBottom:8 }}>✅ 見学後アクション</div>
+                      <div style={{ background:"#f5f8f6", borderRadius:10, overflow:"hidden" }}>
+                        {[
+                          { key:"thankYou", label:"📧 お礼メールを送った" },
+                          { key:"pastExam", label:"📄 過去問を入手した" },
+                          { key:"revisitBooked", label:"🔁 再訪問の予約をした" },
+                        ].map((item, i) => {
+                          const checked = (selected.actions||{})[item.key];
+                          return (
+                            <div key={item.key}
+                              onClick={() => {
+                                const updated = {...selected, actions:{...(selected.actions||{}), [item.key]:!checked}};
+                                setHospitals(prev => prev.map(h => h.id===selected.id ? updated : h));
+                                setSelected(updated);
+                              }}
+                              style={{
+                                display:"flex", alignItems:"center", gap:10, padding:"11px 14px",
+                                borderBottom: i<2 ? "1px solid #e8f0eb" : "none",
+                                cursor:"pointer", background: checked ? "#f0f9f5" : "#f5f8f6",
+                                transition:"background .12s",
+                              }}
+                            >
+                              <div style={{
+                                width:20, height:20, borderRadius:5, flexShrink:0,
+                                border: checked ? "none" : "2px solid #d1ddd8",
+                                background: checked ? "#0f8a6c" : "transparent",
+                                display:"flex", alignItems:"center", justifyContent:"center",
+                              }}>
+                                {checked && <span style={{ color:"#fff", fontSize:13, fontWeight:700 }}>✓</span>}
+                              </div>
+                              <span style={{ fontSize:13, color: checked ? "#1a2e24" : "#7a9489", fontWeight: checked ? 600 : 400 }}>{item.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* ボタン */}
+                  {/* 再訪フラグ */}
+                  <div className="no-print" style={{ marginTop:14 }}>
+                    <button
+                      onClick={() => {
+                        const updated = {...selected, wantToRevisit: !selected.wantToRevisit};
+                        setHospitals(prev => prev.map(h => h.id===selected.id ? updated : h));
+                        setSelected(updated);
+                      }}
+                      style={{
+                        width:"100%", padding:"13px", borderRadius:12, fontSize:14, fontWeight:700, cursor:"pointer",
+                        border: selected.wantToRevisit ? "2px solid #0f8a6c" : "2px dashed #a8c8b8",
+                        background: selected.wantToRevisit ? "#eef5f1" : "#fff",
+                        color: selected.wantToRevisit ? "#0f8a6c" : "#7a9489",
+                        transition:"all .18s",
+                      }}
+                    >
+                      {selected.wantToRevisit ? "🔁 再訪予定あり（タップで解除）" : "🔁 もう一度行きたい"}
+                    </button>
+                  </div>
+
+                  <div className="no-print" style={{ display:"flex", gap:8, marginTop:8, flexWrap:"wrap" }}>
+                    <button onClick={()=>setShowEmail(true)} style={{
+                      flex:1, minWidth:90, padding:"11px 6px", borderRadius:11, border:"none",
+                      background:"#eef5f1", color:"#0f8a6c", fontWeight:700, fontSize:12, cursor:"pointer",
+                    }}>📧 お礼メール</button>
+                    <button onClick={()=>window.print()} style={{
+                      flex:1, minWidth:90, padding:"11px 6px", borderRadius:11, border:"none",
+                      background:"#eef5f1", color:"#4a6358", fontWeight:700, fontSize:12, cursor:"pointer",
+                    }}>🖨️ PDF保存</button>
+                  </div>
+                  <div className="no-print" style={{ display:"flex", gap:8, marginTop:8 }}>
+                    <button onClick={()=>startEdit(selected)} style={{
+                      flex:1, padding:"11px", borderRadius:11, border:"1px solid #0f8a6c",
+                      background:"#fff", color:"#0f8a6c", fontWeight:700, fontSize:13, cursor:"pointer",
+                    }}>編集</button>
+                    {confirmDel===selected.id ? (
+                      <button onClick={()=>deleteHospital(selected.id)} style={{
+                        flex:1, padding:"11px", borderRadius:11, border:"none",
+                        background:"#dc3545", color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer",
+                      }}>本当に削除する</button>
+                    ) : (
+                      <button onClick={()=>setConfirmDel(selected.id)} style={{
+                        flex:1, padding:"11px", borderRadius:11, border:"1px solid #dc3545",
+                        background:"#fff", color:"#dc3545", fontWeight:700, fontSize:13, cursor:"pointer",
+                      }}>削除</button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* お礼メールモーダル */}
+            {showEmail && selected && (
+              <EmailModal hospital={selected} onClose={()=>setShowEmail(false)}/>
+            )}
+
+            {/* ══════════ FORM VIEW ══════════ */}
+            {view==="form" && (
+              <div style={{ animation:"fadeUp .32s ease" }}>
+                <div style={{ fontSize:17, fontWeight:900, marginBottom:18, color:"#1a2e24" }}>
+                  {editId ? "📝 評価を編集" : "🏥 新しい見学記録"}
+                </div>
+
+                {/* ── ステータス切り替え ── */}
+                <div style={{ display:"flex", gap:8, marginBottom:20 }}>
+                  {[
+                    { val:"visited",    label:"🏥 見学済み" },
+                    { val:"interested", label:"👀 気になる（未見学）" },
+                  ].map(opt => (
+                    <button key={opt.val} type="button"
+                      onClick={()=>setForm({...form, status:opt.val})}
+                      style={{
+                        flex:1, padding:"11px 8px", borderRadius:12, fontSize:13, fontWeight:700,
+                        cursor:"pointer",
+                        border: form.status===opt.val ? "2px solid #0f8a6c" : "2px solid #e4ece8",
+                        background: form.status===opt.val ? "#eef5f1" : "#fff",
+                        color: form.status===opt.val ? "#0f8a6c" : "#7a9489",
+                        transition:"all .15s",
+                      }}
+                    >{opt.label}</button>
+                  ))}
+                </div>
+
+                {/* ── 基本情報 ── */}
+                <div style={sectionTitle}>📋 基本情報</div>
+
+                <label style={labelStyle}>病院名 *</label>
+                <input value={form.name}
+                  onChange={e=>setForm({...form, name:e.target.value})}
+                  placeholder="病院名を入力（候補が表示されます）"
+                  list="hospital-list"
+                  autoComplete="off"
+                  style={inputStyle}
+                />
+                <datalist id="hospital-list">
+                  {HOSPITAL_NAMES.map(n => <option key={n} value={n}/>)}
+                </datalist>
+
+                <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:10 }}>
+                  <div>
+                    <label style={labelStyle}>{form.status==="interested" ? "見学予定日（任意）" : "見学日"}</label>
+                    <input type="date" value={form.date}
+                      onChange={e=>setForm({...form, date:e.target.value})}
+                      style={{ ...inputStyle, opacity: form.status==="interested" ? 0.6 : 1 }}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>診療科</label>
+                    <input value={form.department}
+                      onChange={e=>setForm({...form, department:e.target.value})}
+                      placeholder="例：内科" style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                  <div>
+                    <label style={labelStyle}>何回目の見学</label>
+                    <select value={form.visitCount||"1回目"}
+                      onChange={e=>setForm({...form, visitCount:e.target.value})}
+                      style={inputStyle}
+                    >
+                      <option value="1回目">1回目</option>
+                      <option value="2回目">2回目</option>
+                      <option value="3回目">3回目</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label style={labelStyle}>目的</label>
+                    <select value={form.visitPurpose||""}
+                      onChange={e=>setForm({...form, visitPurpose:e.target.value})}
+                      style={inputStyle}
+                    >
+                      <option value="">---</option>
+                      <option value="初回見学">初回見学</option>
+                      <option value="再訪問・情報収集">再訪問・情報収集</option>
+                      <option value="最終確認・顔売り">最終確認・顔売り</option>
+                    </select>
+                  </div>
+                </div>
+
+                <label style={labelStyle}>見学した科の部長名</label>
+                <input value={form.chiefDoctor||""}
+                  onChange={e=>setForm({...form, chiefDoctor:e.target.value})}
+                  placeholder="〇〇 先生" style={inputStyle}
+                />
+
+                <label style={labelStyle}>お世話になった先生</label>
+                <input value={form.thankYouDoctors||""}
+                  onChange={e=>setForm({...form, thankYouDoctors:e.target.value})}
+                  placeholder="〇〇 先生、△△ 先生" style={inputStyle}
+                />
+
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                  <div>
+                    <label style={labelStyle}>💰 給与（月収）</label>
+                    <input value={form.salary||""}
+                      onChange={e=>setForm({...form, salary:e.target.value})}
+                      placeholder="例：26万円" style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label style={labelStyle}>🌙 月当直回数</label>
+                    <input value={form.nightShifts||""}
+                      onChange={e=>setForm({...form, nightShifts:e.target.value})}
+                      placeholder="例：8回" style={inputStyle}
+                    />
+                  </div>
+                </div>
+
+                <label style={labelStyle}>🛏️ 平均受け持ち患者数</label>
+                <select value={form.patientCount||""}
+                  onChange={e=>setForm({...form, patientCount:e.target.value})}
+                  style={inputStyle}
+                >
+                  <option value="">選択してください</option>
+                  <option value="1〜5人">1〜5人</option>
+                  <option value="5〜10人">5〜10人</option>
+                  <option value="10〜20人">10〜20人</option>
+                  <option value="20人以上">20人以上</option>
+                </select>
+
+                <label style={labelStyle}>🔗 募集要項URL（任意）</label>
+                <input value={form.recruitUrl||""}
+                  onChange={e=>setForm({...form, recruitUrl:e.target.value})}
+                  placeholder="https://..." style={inputStyle}
+                  type="url"
+                />
+
+                {/* ── 評価（見学済みのみ） ── */}
+                {form.status === "visited" && <div style={{...sectionTitle, marginTop:28}}>⭐ 各項目の評価</div>}
+
+                {form.status === "visited" && (
+                  <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e4ece8", overflow:"hidden", marginTop:6 }}>
+                    {CATEGORIES.map((c,i) => (
+                      <div key={c.key} style={{
+                        display:"flex", justifyContent:"space-between", alignItems:"center",
+                        padding:"12px 16px",
+                        borderBottom: i<CATEGORIES.length-1 ? "1px solid #f0f4f2" : "none",
+                      }}>
+                        <span style={{ fontSize:13 }}>{c.icon} {c.label}</span>
+                        <StarRating value={form.ratings[c.key]}
+                          onChange={v => setForm({...form, ratings:{...form.ratings, [c.key]:v}})}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* ── チェックリスト（見学済みのみ） ── */}
+                {form.status === "visited" && <div style={{...sectionTitle, marginTop:28}}>✅ みることチェックリスト</div>}
+                {form.status === "visited" && (
+                  <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e4ece8", overflow:"hidden", marginTop:6 }}>
+                    {CHECKLIST_ITEMS.map((item,i) => (
+                      <div key={item.key}
+                        onClick={()=>setForm({...form, checklist:{...form.checklist, [item.key]:!form.checklist[item.key]}})}
+                        style={{
+                          display:"flex", alignItems:"center", gap:12, padding:"12px 16px",
+                          borderBottom: i<CHECKLIST_ITEMS.length-1 ? "1px solid #f0f4f2" : "none",
+                          cursor:"pointer",
+                          background: form.checklist[item.key] ? "#f0f9f5" : "#fff",
+                          transition:"background .12s",
+                        }}
+                      >
+                        <div style={{
+                          width:22, height:22, borderRadius:6, flexShrink:0,
+                          border: form.checklist[item.key] ? "none" : "2px solid #d1ddd8",
+                          background: form.checklist[item.key] ? "#0f8a6c" : "transparent",
+                          display:"flex", alignItems:"center", justifyContent:"center",
+                          transition:"all .12s",
+                        }}>
+                          {form.checklist[item.key] && <span style={{ color:"#fff", fontSize:14, fontWeight:700 }}>✓</span>}
+                        </div>
+                        <span style={{ fontSize:13, color: form.checklist[item.key] ? "#1a2e24" : "#7a9489" }}>
+                          {item.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+
+                {/* ── メモ欄 ── */}
+                <div style={{...sectionTitle, marginTop:28}}>📝 メモ</div>
+
+                {form.status === "interested" && (
+                  <>
+                    <label style={labelStyle}>💡 気になる理由・情報源</label>
+                    <textarea value={form.goodPoints}
+                      onChange={e=>setForm({...form, goodPoints:e.target.value})}
+                      placeholder={"レジナビで話を聞いて興味を持った\n先輩からおすすめされた\n救急が充実していると聞いた…"}
+                      rows={4} style={{...inputStyle, lineHeight:1.65}}
+                    />
+                  </>
+                )}
+
+                {form.status === "visited" && (
+                  <>
+                    <label style={labelStyle}>❓ 聞いたこと・回答メモ</label>
+                    <textarea value={form.askMemo||""}
+                      onChange={e=>setForm({...form, askMemo:e.target.value})}
+                      placeholder={"当直の翌日は休み？どれくらい眠れる？\n後期研修で残る2年目は多い？\nファーストタッチはできる？\n救急は何次対応？フィードバックはある？"}
+                      rows={5} style={{...inputStyle, lineHeight:1.65}}
+                    />
+
+                    <label style={labelStyle}>👍 良かった点</label>
+                    <textarea value={form.goodPoints}
+                      onChange={e=>setForm({...form, goodPoints:e.target.value})}
+                      placeholder="教育体制が整っている、指導医が丁寧、救急が充実…"
+                      rows={3} style={{...inputStyle, lineHeight:1.65}}
+                    />
+
+                    <label style={labelStyle}>👎 気になった点</label>
+                    <textarea value={form.badPoints}
+                      onChange={e=>setForm({...form, badPoints:e.target.value})}
+                      placeholder="当直が多い、アクセスが不便…"
+                      rows={3} style={{...inputStyle, lineHeight:1.65}}
+                    />
+                  </>
+                )}
+
+                <label style={labelStyle}>📝 自由メモ</label>
+                <textarea value={form.memo}
+                  onChange={e=>setForm({...form, memo:e.target.value})}
+                  placeholder="志望理由・面接で聞かれたこと・試験対策など"
+                  rows={3} style={{...inputStyle, lineHeight:1.65}}
+                />
+
+                {/* ── マッチング対策（見学済みのみ） ── */}
+                {form.status === "visited" && <>
+                  <div style={{...sectionTitle, marginTop:28}}>🎯 マッチング対策</div>
+
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                    <div>
+                      <label style={labelStyle}>選考方法</label>
+                      <select value={form.matchSelection||""}
+                        onChange={e=>setForm({...form, matchSelection:e.target.value})}
+                        style={inputStyle}
+                      >
+                        <option value="">不明</option>
+                        <option value="面接のみ">面接のみ</option>
+                        <option value="面接＋筆記">面接＋筆記</option>
+                        <option value="面接＋小論文">面接＋小論文</option>
+                        <option value="面接＋実技">面接＋実技</option>
+                        <option value="書類＋面接＋筆記">書類＋面接＋筆記</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>過去問</label>
+                      <select value={form.matchPastExam||""}
+                        onChange={e=>setForm({...form, matchPastExam:e.target.value})}
+                        style={inputStyle}
+                      >
+                        <option value="">不明</option>
+                        <option value="当日配布">当日配布</option>
+                        <option value="USB持参">USB持参</option>
+                        <option value="事前入手可">事前入手可</option>
+                        <option value="なし">なし</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                    <div>
+                      <label style={labelStyle}>成績・CBTの重視度</label>
+                      <select value={form.matchGradeWeight||""}
+                        onChange={e=>setForm({...form, matchGradeWeight:e.target.value})}
+                        style={inputStyle}
+                      >
+                        <option value="">不明</option>
+                        <option value="かなり重視">かなり重視</option>
+                        <option value="ある程度重視">ある程度重視</option>
+                        <option value="あまり関係ない">あまり関係ない</option>
+                        <option value="関係ない">関係ない</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label style={labelStyle}>コネ・顔売りの影響</label>
+                      <select value={form.matchConnection||""}
+                        onChange={e=>setForm({...form, matchConnection:e.target.value})}
+                        style={inputStyle}
+                      >
+                        <option value="">不明</option>
+                        <option value="ほぼなし">ほぼなし</option>
+                        <option value="多少ある">多少ある</option>
+                        <option value="かなりある">かなりある</option>
+                        <option value="ほぼコネで決まる">ほぼコネで決まる</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <label style={labelStyle}>面接で聞かれたこと</label>
+                  <textarea value={form.matchInterview||""}
+                    onChange={e=>setForm({...form, matchInterview:e.target.value})}
+                    placeholder={"志望理由・自己PR・将来の専門科は？\n学生時代に頑張ったこと\n当院を選んだ理由…"}
+                    rows={4} style={{...inputStyle, lineHeight:1.65}}
+                  />
+
+                  <label style={labelStyle}>試験対策・その他メモ</label>
+                  <textarea value={form.matchMemo||""}
+                    onChange={e=>setForm({...form, matchMemo:e.target.value})}
+                    placeholder={"筆記は国試レベル・CBT形式\n見学回数が合否に影響する\nこの病院は〇〇大学の出身者が多い…"}
+                    rows={3} style={{...inputStyle, lineHeight:1.65}}
+                  />
+                </>}
+
+                {/* ── 写真 ── */}
+                <div style={{...sectionTitle, marginTop:28}}>📷 写真</div>
+                <label style={{
+                  display:"block", padding:"16px", borderRadius:12,
+                  border:"2px dashed #c8d8d0", textAlign:"center",
+                  cursor:"pointer", color:"#7a9489", fontSize:13, marginTop:8,
+                  background:"#fafcfb",
+                }}>
+                  📷 タップして写真を追加
+                  <input type="file" accept="image/*" multiple onChange={handlePhoto} style={{ display:"none" }}/>
+                </label>
+                {(form.photos||[]).length > 0 && (
+                  <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:10 }}>
+                    {form.photos.map((p,i) => (
+                      <div key={i} style={{ position:"relative" }}>
+                        <img src={p} alt="" style={{ width:80, height:80, objectFit:"cover", borderRadius:9, border:"1px solid #e4ece8" }}/>
+                        <button
+                          onClick={()=>setForm({...form, photos:form.photos.filter((_,j)=>j!==i)})}
+                          style={{
+                            position:"absolute", top:-7, right:-7, width:22, height:22,
+                            borderRadius:"50%", border:"none", background:"#dc3545",
+                            color:"#fff", fontSize:12, cursor:"pointer",
+                            display:"flex", alignItems:"center", justifyContent:"center", fontWeight:700,
+                          }}
+                        >✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* 保存ボタン */}
+                <button onClick={saveHospital} disabled={!form.name.trim()}
+                  style={{
+                    width:"100%", padding:"15px", borderRadius:14, border:"none", marginTop:28,
+                    background: form.name.trim() ? "linear-gradient(135deg,#0f8a6c,#12a67e)" : "#c8d8d0",
+                    color:"#fff", fontSize:16, fontWeight:800,
+                    cursor: form.name.trim() ? "pointer" : "default",
+                    transition:"all .2s",
+                    boxShadow: form.name.trim() ? "0 4px 18px rgba(15,138,108,0.3)" : "none",
+                  }}
+                >{editId ? "更新する" : "記録を保存"}</button>
+
+                {editId && (
+                  <button onClick={resetForm} style={{
+                    width:"100%", padding:"13px", borderRadius:14,
+                    border:"1px solid #d1ddd8", background:"#fff",
+                    color:"#7a9489", fontSize:14, fontWeight:600,
+                    cursor:"pointer", marginTop:8,
+                  }}>キャンセル</button>
+                )}
+              </div>
+            )}
+
+            {/* ══════════ COMPARE VIEW ══════════ */}
+            {view==="compare" && (
+              <div style={{ animation:"fadeUp .32s ease" }}>
+                {hospitals.filter(h=>h.status!=="interested").length >= 2 && (
+                  <div style={{ marginBottom:14 }}>
+                    <div style={{ fontSize:12, fontWeight:700, color:"#4a6358", marginBottom:8 }}>比較する病院を選択（未選択=全て）</div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:5 }}>
+                      {hospitals.filter(h=>h.status!=="interested").map(h => {
+                        const checked = compareSelected.includes(h.id);
+                        return (
+                          <div key={h.id}
+                            onClick={()=>setCompareSelected(prev => prev.includes(h.id) ? prev.filter(id=>id!==h.id) : [...prev, h.id])}
+                            style={{
+                              display:"flex", alignItems:"center", gap:10, padding:"9px 12px",
+                              background: checked ? "#eef5f1" : "#fff", borderRadius:10,
+                              border: checked ? "1.5px solid #0f8a6c" : "1.5px solid #e4ece8",
+                              cursor:"pointer", transition:"all .13s",
+                            }}
+                          >
+                            <div style={{
+                              width:20, height:20, borderRadius:5, flexShrink:0,
+                              border: checked ? "none" : "2px solid #d1ddd8",
+                              background: checked ? "#0f8a6c" : "transparent",
+                              display:"flex", alignItems:"center", justifyContent:"center",
+                            }}>
+                              {checked && <span style={{ color:"#fff", fontSize:12, fontWeight:700 }}>✓</span>}
+                            </div>
+                            <span style={{ fontSize:13, fontWeight: checked ? 700 : 400, color: checked ? "#0f8a6c" : "#4a6358" }}>{h.name}</span>
+                            {h.rank > 0 && <span style={{ fontSize:11, color:"#7a9489", marginLeft:"auto" }}>第{h.rank}志望</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                {hospitals.length < 2 ? (
+                  <div style={{ textAlign:"center", padding:"60px 20px", color:"#96afa5" }}>
+                    <div style={{ fontSize:52, marginBottom:12 }}>📊</div>
+                    <div style={{ fontSize:16, fontWeight:700, marginBottom:6 }}>比較するには2件以上の記録が必要です</div>
+                  </div>
+                ) : (
+                  <>
+                    {(() => {
+                      const compareHospitals = compareSelected.length >= 2
+                        ? hospitals.filter(h => compareSelected.includes(h.id))
+                        : hospitals.filter(h => h.status !== "interested");
+                      return (
+                        <>
+                    <div style={{ fontSize:18, fontWeight:900, marginBottom:18 }}>病院比較</div>
+
+                    {CATEGORIES.map(cat => (
+                      <div key={cat.key} style={{ marginBottom:18 }}>
+                        <div style={{ fontSize:13, fontWeight:700, color:"#4a6358", marginBottom:8 }}>{cat.icon} {cat.label}</div>
+                        {[...compareHospitals]
+                          .sort((a,b) => (b.ratings[cat.key]||0) - (a.ratings[cat.key]||0))
+                          .map(h => {
+                            const val = h.ratings[cat.key]||0;
+                            return (
+                              <div key={h.id} style={{ display:"flex", alignItems:"center", gap:10, marginBottom:5 }}>
+                                <div style={{ fontSize:11, width:90, color:"#4a6358", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", flexShrink:0 }}>{h.name}</div>
+                                <div style={{ flex:1, height:22, background:"#eef5f1", borderRadius:6, overflow:"hidden" }}>
+                                  <div style={{
+                                    width:`${(val/5)*100}%`, height:"100%",
+                                    background: val>=4 ? "linear-gradient(90deg,#0f8a6c,#12a67e)" : val>=3 ? "linear-gradient(90deg,#2d9e80,#52b89a)" : "linear-gradient(90deg,#96afa5,#b0c4bb)",
+                                    borderRadius:6, transition:"width .5s ease",
+                                    display:"flex", alignItems:"center", justifyContent:"flex-end", paddingRight:7,
+                                  }}>
+                                    {val > 0 && <span style={{ fontSize:11, fontWeight:700, color:"#fff" }}>{val}</span>}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                      </div>
+                    ))}
+
+                    {/* 総合ランキング */}
+                    <div style={{ marginTop:24, background:"#fff", borderRadius:16, border:"1px solid #e4ece8", padding:20 }}>
+                      <div style={{ fontSize:15, fontWeight:900, color:"#1a2e24", marginBottom:12 }}>🏆 総合ランキング</div>
+                      {[...compareHospitals]
+                        .sort((a,b) => avgRating(b) - avgRating(a))
+                        .map((h,i) => (
+                          <div key={h.id} style={{
+                            display:"flex", alignItems:"center", gap:12, padding:"10px 0",
+                            borderBottom: i<compareHospitals.length-1 ? "1px solid #f0f4f2" : "none",
+                          }}>
+                            <div style={{
+                              width:28, height:28, borderRadius:8,
+                              display:"flex", alignItems:"center", justifyContent:"center",
+                              fontSize:13, fontWeight:800,
+                              background: i===0 ? "linear-gradient(135deg,#f0c040,#e8a820)"
+                                        : i===1 ? "linear-gradient(135deg,#c0c8d0,#a0a8b0)"
+                                        : i===2 ? "linear-gradient(135deg,#d4a070,#c08850)"
+                                        : "#f0f4f2",
+                              color: i<3 ? "#fff" : "#7a9489",
+                            }}>{i+1}</div>
+                            <div style={{ flex:1 }}>
+                              <div style={{ fontSize:14, fontWeight:700 }}>{h.name}</div>
+                              <div style={{ fontSize:12, color:"#7a9489" }}>{h.department}</div>
+                            </div>
+                            <div style={{ fontSize:18, fontWeight:900, color:"#0f8a6c" }}>{avgRating(h).toFixed(1)}</div>
+                          </div>
+                        ))}
+                    </div>
+                        </>
+                      );
+                    })()}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* ===== 設定タブ ===== */}
+            {view === "settings" && (
+              <div style={{ animation:"fadeUp .32s ease" }}>
+                {/* セクション切り替え */}
+                <div style={{ display:"flex", gap:6, marginBottom:20 }}>
+                  {[
+                    { key:"weights",   label:"⚖️ 重み" },
+                    { key:"data",      label:"💾 データ" },
+                    { key:"checklist", label:"📋 持ち物" },
+                  ].map(s => (
+                    <button key={s.key} type="button"
+                      onClick={()=>setSettingsSection(s.key)}
+                      style={{
+                        flex:1, padding:"9px 4px", borderRadius:10, fontSize:12, fontWeight:700,
+                        cursor:"pointer",
+                        border: settingsSection===s.key ? "2px solid #0f8a6c" : "2px solid #e4ece8",
+                        background: settingsSection===s.key ? "#eef5f1" : "#fff",
+                        color: settingsSection===s.key ? "#0f8a6c" : "#7a9489",
+                      }}
+                    >{s.label}</button>
+                  ))}
+                </div>
+
+                {/* 重み設定 */}
+                {settingsSection === "weights" && (
+                  <div>
+                    <div style={{ fontSize:15, fontWeight:900, color:"#1a2e24", marginBottom:4 }}>⚖️ 評価の重み設定</div>
+                    <div style={{ fontSize:12, color:"#7a9489", marginBottom:16 }}>大切な項目の重みを上げると総合スコアに反映されます</div>
+                    {!CATEGORIES.every(c => weights[c.key] === 2) && (
+                      <button onClick={()=>setWeights({...DEFAULT_WEIGHTS})}
+                        style={{ fontSize:12, color:"#7a9489", background:"none", border:"1px solid #d1ddd8", borderRadius:7, padding:"5px 12px", cursor:"pointer", marginBottom:12 }}
+                      >すべてリセット</button>
+                    )}
+                    {CATEGORIES.map(c => (
+                      <div key={c.key} style={{ marginBottom:16 }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:7 }}>
+                          <span style={{ fontSize:13, fontWeight:600 }}>{c.icon} {c.label}</span>
+                          <span style={{ fontSize:11, fontWeight:700, padding:"2px 9px", borderRadius:5,
+                            background: WEIGHT_COLORS[weights[c.key]]+"22", color: WEIGHT_COLORS[weights[c.key]] }}>
+                            {WEIGHT_LABELS[weights[c.key]]}
+                          </span>
+                        </div>
+                        <div style={{ display:"flex", gap:5 }}>
+                          {WEIGHT_LABELS.map((label, i) => (
+                            <button key={i} type="button" onClick={()=>setWeights({...weights, [c.key]: i})}
+                              style={{
+                                flex:1, padding:"7px 2px", borderRadius:7, fontSize:10, fontWeight:700, cursor:"pointer",
+                                border: weights[c.key]===i ? `2px solid ${WEIGHT_COLORS[i]}` : "2px solid #e4ece8",
+                                background: weights[c.key]===i ? WEIGHT_COLORS[i]+"22" : "#fff",
+                                color: weights[c.key]===i ? WEIGHT_COLORS[i] : "#a8b8b0",
+                                transition:"all .12s",
+                              }}
+                            >{label}</button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* データ管理 */}
+                {settingsSection === "data" && (
+                  <div>
+                    <div style={{ fontSize:15, fontWeight:900, color:"#1a2e24", marginBottom:4 }}>💾 データ管理</div>
+                    <div style={{ fontSize:12, color:"#7a9489", marginBottom:20 }}>機種変更・バックアップ・友達との共有に使えます</div>
+
+                    <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e4ece8", padding:20, marginBottom:12 }}>
+                      <div style={{ fontSize:14, fontWeight:700, color:"#1a2e24", marginBottom:4 }}>📤 エクスポート</div>
+                      <div style={{ fontSize:12, color:"#7a9489", marginBottom:12 }}>全記録をJSONファイルで保存します（{hospitals.length}件）</div>
+                      <button onClick={exportData}
+                        style={{ width:"100%", padding:"12px", borderRadius:11, border:"none",
+                          background:"linear-gradient(135deg,#0f8a6c,#12a67e)", color:"#fff",
+                          fontWeight:700, fontSize:14, cursor:"pointer" }}
+                      >ファイルに書き出す</button>
+                    </div>
+
+                    <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e4ece8", padding:20 }}>
+                      <div style={{ fontSize:14, fontWeight:700, color:"#1a2e24", marginBottom:4 }}>📥 インポート</div>
+                      <div style={{ fontSize:12, color:"#7a9489", marginBottom:12 }}>エクスポートしたJSONファイルを読み込みます（重複は自動スキップ）</div>
+                      <label style={{ display:"block", padding:"12px", borderRadius:11, border:"2px dashed #c8d8d0",
+                        textAlign:"center", cursor:"pointer", color:"#7a9489", fontSize:13, background:"#fafcfb" }}>
+                        📂 ファイルを選択
+                        <input type="file" accept=".json" onChange={importData} style={{ display:"none" }}/>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* 見学前持ち物チェックリスト */}
+                {settingsSection === "checklist" && (
+                  <div>
+                    <div style={{ fontSize:15, fontWeight:900, color:"#1a2e24", marginBottom:4 }}>📋 見学前 持ち物チェックリスト</div>
+                    <div style={{ fontSize:12, color:"#7a9489", marginBottom:16 }}>項目を追加・削除できます。チェックは毎回リセットされます。</div>
+                    <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e4ece8", overflow:"hidden" }}>
+                      {packingItems.map((item, i) => {
+                        const checked = !!packingChecks[i];
+                        return (
+                          <div key={i}
+                            style={{
+                              display:"flex", alignItems:"center", gap:10, padding:"11px 14px",
+                              borderBottom: i<packingItems.length-1 ? "1px solid #f0f4f2" : "none",
+                              background: checked ? "#f0f9f5" : "#fff",
+                              transition:"background .12s",
+                            }}
+                          >
+                            <div onClick={()=>setPackingChecks(prev=>({...prev, [i]:!prev[i]}))} style={{
+                              width:22, height:22, borderRadius:6, flexShrink:0, cursor:"pointer",
+                              border: checked ? "none" : "2px solid #d1ddd8",
+                              background: checked ? "#0f8a6c" : "transparent",
+                              display:"flex", alignItems:"center", justifyContent:"center",
+                            }}>
+                              {checked && <span style={{ color:"#fff", fontSize:14, fontWeight:700 }}>✓</span>}
+                            </div>
+                            <span onClick={()=>setPackingChecks(prev=>({...prev, [i]:!prev[i]}))} style={{ fontSize:13, color: checked ? "#1a2e24" : "#4a6358", flex:1, cursor:"pointer" }}>{item}</span>
+                            <button onClick={()=>{
+                              const updated = packingItems.filter((_,j)=>j!==i);
+                              setPackingItems(updated);
+                            }} style={{ background:"none", border:"none", color:"#c8a0a0", fontSize:16, cursor:"pointer", padding:"2px 4px", lineHeight:1 }}>✕</button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div style={{ display:"flex", gap:8, marginTop:10 }}>
+                      <input
+                        placeholder="＋ 項目を追加…"
+                        onKeyDown={e=>{
+                          if(e.key==="Enter" && e.target.value.trim()){
+                            setPackingItems(prev=>[...prev, e.target.value.trim()]);
+                            e.target.value="";
+                          }
+                        }}
+                        style={{ flex:1, padding:"9px 12px", borderRadius:9, border:"1px solid #d1ddd8", fontSize:13, background:"#fff" }}
+                      />
+                      <button onClick={e=>{
+                        const input = e.target.previousSibling;
+                        if(input.value.trim()){ setPackingItems(prev=>[...prev, input.value.trim()]); input.value=""; }
+                      }} style={{ padding:"9px 14px", borderRadius:9, border:"none", background:"#0f8a6c", color:"#fff", fontWeight:700, fontSize:13, cursor:"pointer" }}>追加</button>
+                    </div>
+                    <div style={{ fontSize:11, color:"#a8b8b0", textAlign:"center", marginTop:8 }}>
+                      ※ チェックは毎回リセット。項目の変更は保存されます。
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+          </div>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+  </script>
+</body>
+</html>
