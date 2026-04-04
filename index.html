@@ -275,7 +275,7 @@
       "高槻病院","吹田市民病院",
 
       // ── 追加：愛知・東海エリア ──
-      "岡崎市民病院","岡崎医療センター","刈谷豊田総合病院",
+      "岡崎市民病院","国立病院機構岡崎医療センター","刈谷豊田総合病院",
       "豊橋市民病院","豊川市民病院","蒲郡市民病院",
       "半田市立半田病院","常滑市民病院","春日井市民病院",
       "小牧市民病院","犬山市民病院","江南厚生病院",
@@ -576,7 +576,7 @@
 `件名：病院見学のお礼
 
 ${hospital.name} ${hospital.department || ""}
-${hospital.thankYouDoctors ? (hospital.thankYouDoctors.includes("先生") ? hospital.thankYouDoctors : hospital.thankYouDoctors + " 先生") : "ご担当者"} 様
+${hospital.thankYouDoctors ? (hospital.thankYouDoctors.includes("先生") ? hospital.thankYouDoctors : hospital.thankYouDoctors + " 先生") + " 様" : "（宛先を入力してください）"}
 
 お世話になっております。
 〇〇大学医学部◯年の〇〇〇〇です。
@@ -1699,7 +1699,11 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                     </div>
                     <div>
                       <label style={{ fontSize:11, fontWeight:700, color:"#0f8a6c", display:"block", marginBottom:4 }}>日付</label>
-                      <input id="evDate" type="text" placeholder="例：2026/05/10" style={{ width:"100%", padding:"9px 10px", borderRadius:9, border:"1px solid #d1ddd8", fontSize:13 }}/>
+                      <div style={{ display:"flex", gap:4 }}>
+                        <input id="evDateMonth" type="month" style={{ flex:1, padding:"9px 8px", borderRadius:9, border:"1px solid #d1ddd8", fontSize:13 }}/>
+                        <input id="evDateDay" type="number" min="1" max="31" placeholder="日" style={{ width:52, padding:"9px 6px", borderRadius:9, border:"1px solid #d1ddd8", fontSize:13, textAlign:"center" }}/>
+                      </div>
+                      <div style={{ fontSize:10, color:"#a8b8b0", marginTop:3 }}>日付は省略可（月だけでもOK）</div>
                     </div>
                   </div>
                   <div style={{ marginBottom:8 }}>
@@ -1712,12 +1716,15 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                   </div>
                   <button onClick={()=>{
                     const type = document.getElementById("evType").value;
-                    const date = document.getElementById("evDate").value.trim();
+                    const month = document.getElementById("evDateMonth").value;
+                    const day = document.getElementById("evDateDay").value.trim();
+                    const date = month ? (day ? month + "-" + day.padStart(2,"0") : month) : (day ? day + "日" : "");
                     const title = document.getElementById("evTitle").value.trim();
                     const note = document.getElementById("evNote").value.trim();
                     if(!title) return;
                     setScheduleEvents(prev=>[...prev, {id:Date.now().toString(), type, date, title, note}].sort((a,b)=>a.date.localeCompare(b.date)));
-                    document.getElementById("evDate").value="";
+                    document.getElementById("evDateMonth").value="";
+                    document.getElementById("evDateDay").value="";
                     document.getElementById("evTitle").value="";
                     document.getElementById("evNote").value="";
                   }} style={{ width:"100%", padding:"11px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#0f8a6c,#12a67e)", color:"#fff", fontWeight:700, fontSize:14, cursor:"pointer" }}>
