@@ -1159,7 +1159,7 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                   {selected.status !== "interested" && (
                     <>
                       <div style={{ display:"flex", justifyContent:"center", marginBottom:14 }}>
-                        <RadarChart ratings={selected.ratings} size={220} categories={allCategories}/>
+                        <RadarChart ratings={selected.ratings} size={220} categories={allCategories.filter(c=>(weights[c.key]??2)>0)}/>
                       </div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:6, marginBottom:16 }}>
                         {allCategories.map(c => (
