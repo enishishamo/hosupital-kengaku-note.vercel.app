@@ -870,6 +870,7 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
       const [showEmail, setShowEmail]   = useState(false);
       const [showWeights, setShowWeights] = useState(false);
       const [settingsSection, setSettingsSection] = useState("weights"); // "weights"|"data"|"checklist"
+      const [evDateMode, setEvDateMode] = useState("date"); // "date"|"month"|"none"
       const [compareSelected, setCompareSelected] = useState([]);
       const [scheduleEvents, setScheduleEvents] = useState(() => {
         try { return JSON.parse(localStorage.getItem("scheduleEvents") || "[]"); }
@@ -1905,7 +1906,18 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                     </div>
                     <div>
                       <label style={{ fontSize:11, fontWeight:700, color:"#0f8a6c", display:"block", marginBottom:4 }}>日付</label>
-                      <input id="evDate" type="date" style={{ width:"100%", padding:"9px 8px", borderRadius:9, border:"1px solid #d1ddd8", fontSize:13, boxSizing:"border-box" }}/>
+                      <div style={{ display:"flex", gap:4, marginBottom:6 }}>
+                        {[["date","📅 日付"],["month","📅 月のみ"],["none","未定"]].map(([mode,label])=>(
+                          <button key={mode} type="button" onClick={()=>setEvDateMode(mode)}
+                            style={{ flex:1, padding:"6px 2px", borderRadius:8, fontSize:11, fontWeight:700, cursor:"pointer",
+                              border: evDateMode===mode ? "2px solid #0f8a6c" : "2px solid #e4ece8",
+                              background: evDateMode===mode ? "#eef5f1" : "#fff",
+                              color: evDateMode===mode ? "#0f8a6c" : "#a8b8b0" }}
+                          >{label}</button>
+                        ))}
+                      </div>
+                      {evDateMode==="date"  && <input id="evDate"      type="date"  style={{ width:"100%", padding:"9px 8px", borderRadius:9, border:"1px solid #d1ddd8", fontSize:13, boxSizing:"border-box" }}/>}
+                      {evDateMode==="month" && <input id="evDateMonth" type="month" style={{ width:"100%", padding:"9px 8px", borderRadius:9, border:"1px solid #d1ddd8", fontSize:13, boxSizing:"border-box" }}/>}
                     </div>
                   </div>
                   <div style={{ marginBottom:8 }}>
@@ -1918,12 +1930,15 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                   </div>
                   <button onClick={()=>{
                     const type = document.getElementById("evType").value;
-                    const date = document.getElementById("evDate").value;
+                    const date = evDateMode==="date"  ? (document.getElementById("evDate")?document.getElementById("evDate").value:"")
+                               : evDateMode==="month" ? (document.getElementById("evDateMonth")?document.getElementById("evDateMonth").value:"")
+                               : "";
                     const title = document.getElementById("evTitle").value.trim();
                     const note = document.getElementById("evNote").value.trim();
                     if(!title) return;
                     setScheduleEvents(prev=>[...prev, {id:Date.now().toString(), type, date, title, note}].sort((a,b)=>a.date.localeCompare(b.date)));
-                    document.getElementById("evDate").value="";
+                    if(document.getElementById("evDate"))      document.getElementById("evDate").value="";
+                    if(document.getElementById("evDateMonth")) document.getElementById("evDateMonth").value="";
                     document.getElementById("evTitle").value="";
                     document.getElementById("evNote").value="";
                   }} style={{ width:"100%", padding:"11px", borderRadius:10, border:"none", background:"linear-gradient(135deg,#0f8a6c,#12a67e)", color:"#fff", fontWeight:700, fontSize:14, cursor:"pointer" }}>
