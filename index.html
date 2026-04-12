@@ -943,9 +943,10 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
     }
 
     /* ===== Main App ===== */
-    function App() {
+    function App({ accountId, accountName, onLogout }) {
+      const sk = k => `${accountId}_${k}`;
       const [hospitals, setHospitals] = useState(() => {
-        try { return JSON.parse(localStorage.getItem("byouin_v2") || "[]"); }
+        try { return JSON.parse(localStorage.getItem(sk("byouin_v2")) || "[]"); }
         catch { return []; }
       });
       const [view, setView]             = useState("list");
@@ -961,18 +962,18 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
       const [evDateValue, setEvDateValue] = useState("");
       const [compareSelected, setCompareSelected] = useState([]);
       const [scheduleEvents, setScheduleEvents] = useState(() => {
-        try { return JSON.parse(localStorage.getItem("scheduleEvents") || "[]"); }
+        try { return JSON.parse(localStorage.getItem(sk("scheduleEvents")) || "[]"); }
         catch { return []; }
       });
       React.useEffect(() => {
-        localStorage.setItem("scheduleEvents", JSON.stringify(scheduleEvents));
+        localStorage.setItem(sk("scheduleEvents"), JSON.stringify(scheduleEvents));
       }, [scheduleEvents]);
       const [customCategories, setCustomCategories] = useState(() => {
-        try { return JSON.parse(localStorage.getItem("customCategories") || "[]"); }
+        try { return JSON.parse(localStorage.getItem(sk("customCategories")) || "[]"); }
         catch { return []; }
       });
       React.useEffect(() => {
-        localStorage.setItem("customCategories", JSON.stringify(customCategories));
+        localStorage.setItem(sk("customCategories"), JSON.stringify(customCategories));
       }, [customCategories]);
       const allCategories = [...CATEGORIES, ...customCategories];
       const [packingChecks, setPackingChecks] = useState({});
@@ -984,25 +985,25 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
         "👗 着圧ソックス","🎒 セカンドバッグ","📱 iPad・タブレット",
       ];
       const [packingItems, setPackingItems] = useState(() => {
-        try { return JSON.parse(localStorage.getItem("packingItems") || "null") || DEFAULT_PACKING; }
+        try { return JSON.parse(localStorage.getItem(sk("packingItems")) || "null") || DEFAULT_PACKING; }
         catch { return DEFAULT_PACKING; }
       });
       React.useEffect(() => {
-        localStorage.setItem("packingItems", JSON.stringify(packingItems));
+        localStorage.setItem(sk("packingItems"), JSON.stringify(packingItems));
       }, [packingItems]);
       const [weights, setWeights] = useState(() => {
-        try { return JSON.parse(localStorage.getItem("byouin_weights") || "null") || {...DEFAULT_WEIGHTS}; }
+        try { return JSON.parse(localStorage.getItem(sk("byouin_weights")) || "null") || {...DEFAULT_WEIGHTS}; }
         catch { return {...DEFAULT_WEIGHTS}; }
       });
 
       useEffect(() => {
-        try { localStorage.setItem("byouin_weights", JSON.stringify(weights)); } catch {}
+        try { localStorage.setItem(sk("byouin_weights"), JSON.stringify(weights)); } catch {}
       }, [weights]);
 
       const hasCustomWeights = CATEGORIES.some(c => weights[c.key] !== 2);
 
       useEffect(() => {
-        try { localStorage.setItem("byouin_v2", JSON.stringify(hospitals)); } catch {}
+        try { localStorage.setItem(sk("byouin_v2"), JSON.stringify(hospitals)); } catch {}
       }, [hospitals]);
 
       const avgRating = h => {
@@ -1129,6 +1130,14 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
           }}>
             <div style={{ position:"absolute", top:-40, right:-40, width:150, height:150, borderRadius:"50%", background:"rgba(255,255,255,0.06)" }}/>
             <div style={{ position:"absolute", bottom:-20, left:50, width:80, height:80, borderRadius:"50%", background:"rgba(255,255,255,0.04)" }}/>
+            {/* アカウントバー */}
+            <div style={{ position:"absolute", top:12, right:16, display:"flex", alignItems:"center", gap:8, zIndex:10 }}>
+              <span style={{ fontSize:12, opacity:0.85, background:"rgba(255,255,255,0.15)", padding:"3px 10px", borderRadius:20 }}>👤 {accountName}</span>
+              <button onClick={onLogout} style={{
+                fontSize:11, padding:"3px 10px", borderRadius:20, border:"1px solid rgba(255,255,255,0.4)",
+                background:"rgba(255,255,255,0.1)", color:"#fff", cursor:"pointer", fontWeight:600,
+              }}>ログアウト</button>
+            </div>
             <div style={{ fontSize:11, fontWeight:500, opacity:0.7, letterSpacing:2.5, textTransform:"uppercase", marginBottom:4 }}>Hospital Review</div>
             <div style={{ fontSize:24, fontWeight:900, letterSpacing:-0.5 }}>病院見学ノート</div>
             <div style={{ fontSize:12, opacity:0.65, marginTop:3 }}>見学した病院の評価を記録・比較</div>
@@ -2263,7 +2272,155 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
       );
     }
 
-    ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+    /* ===== Login Screen ===== */
+    function LoginScreen({ accounts, onLogin, onRegister }) {
+      const [mode, setMode] = useState(accounts.length === 0 ? "register" : "login");
+      const [name, setName] = useState("");
+      const [password, setPassword] = useState("");
+      const [error, setError] = useState("");
+
+      const handleSubmit = e => {
+        e.preventDefault();
+        if (!name.trim() || !password.trim()) { setError("名前とパスワードを入力してください"); return; }
+        const err = mode === "login" ? onLogin(name.trim(), password) : onRegister(name.trim(), password);
+        if (err) setError(err);
+      };
+
+      return (
+        <div style={{
+          minHeight:"100vh", background:"linear-gradient(170deg,#f0f6f3 0%,#e8f0eb 50%,#f5f8f6 100%)",
+          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+          padding:"24px",
+        }}>
+          {/* ヘッダー装飾 */}
+          <div style={{ textAlign:"center", marginBottom:32 }}>
+            <div style={{
+              width:72, height:72, borderRadius:20, margin:"0 auto 16px",
+              background:"linear-gradient(135deg,#0f8a6c,#085c48)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:36, boxShadow:"0 8px 24px rgba(15,138,108,0.3)",
+            }}>🏥</div>
+            <div style={{ fontSize:22, fontWeight:900, color:"#1a2e24", letterSpacing:-0.5 }}>病院見学ノート</div>
+            <div style={{ fontSize:13, color:"#6a8c7f", marginTop:4 }}>Hospital Review App</div>
+          </div>
+
+          {/* カード */}
+          <div style={{
+            background:"#fff", borderRadius:20, padding:"28px 28px 32px",
+            width:"100%", maxWidth:360, boxShadow:"0 4px 24px rgba(0,0,0,0.08)",
+          }}>
+            {/* タブ */}
+            <div style={{ display:"flex", marginBottom:24, background:"#f0f6f3", borderRadius:12, padding:4 }}>
+              {[["login","ログイン"], ["register","新規作成"]].map(([m, label]) => (
+                <button key={m} onClick={() => { setMode(m); setError(""); }}
+                  style={{
+                    flex:1, padding:"9px 0", border:"none", borderRadius:9, cursor:"pointer",
+                    fontWeight:700, fontSize:14,
+                    background: mode===m ? "#fff" : "transparent",
+                    color: mode===m ? "#0f8a6c" : "#7a9489",
+                    boxShadow: mode===m ? "0 1px 6px rgba(0,0,0,0.08)" : "none",
+                    transition:"all .15s",
+                  }}
+                >{label}</button>
+              ))}
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom:14 }}>
+                <label style={{ fontSize:12, fontWeight:700, color:"#4a6358", display:"block", marginBottom:6 }}>アカウント名</label>
+                <input
+                  value={name} onChange={e=>{ setName(e.target.value); setError(""); }}
+                  placeholder="例：田中一郎"
+                  style={{
+                    width:"100%", padding:"11px 14px", borderRadius:10,
+                    border:"1.5px solid #d1ddd8", fontSize:15, background:"#fafcfb",
+                  }}
+                />
+              </div>
+              <div style={{ marginBottom:20 }}>
+                <label style={{ fontSize:12, fontWeight:700, color:"#4a6358", display:"block", marginBottom:6 }}>パスワード</label>
+                <input
+                  type="password" value={password} onChange={e=>{ setPassword(e.target.value); setError(""); }}
+                  placeholder="パスワードを入力"
+                  style={{
+                    width:"100%", padding:"11px 14px", borderRadius:10,
+                    border:"1.5px solid #d1ddd8", fontSize:15, background:"#fafcfb",
+                  }}
+                />
+              </div>
+              {error && <div style={{ fontSize:13, color:"#c0392b", marginBottom:14, padding:"8px 12px", background:"#fef0ee", borderRadius:8 }}>{error}</div>}
+              <button type="submit" style={{
+                width:"100%", padding:"13px 0", borderRadius:12, border:"none",
+                background:"linear-gradient(135deg,#0f8a6c,#085c48)", color:"#fff",
+                fontWeight:900, fontSize:16, cursor:"pointer",
+                boxShadow:"0 4px 14px rgba(15,138,108,0.35)", letterSpacing:0.5,
+              }}>
+                {mode === "login" ? "ログイン" : "アカウントを作成"}
+              </button>
+            </form>
+
+            {accounts.length > 0 && (
+              <div style={{ marginTop:20, paddingTop:16, borderTop:"1px solid #e8f0eb" }}>
+                <div style={{ fontSize:11, color:"#9ab3a8", marginBottom:8, textAlign:"center" }}>登録済みアカウント</div>
+                {accounts.map(a => (
+                  <div key={a.id} style={{
+                    fontSize:13, color:"#4a6358", padding:"6px 10px", borderRadius:8,
+                    background:"#f5faf8", marginBottom:4, cursor:"pointer",
+                  }} onClick={() => { setName(a.name); setMode("login"); }}>
+                    👤 {a.name}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <div style={{ fontSize:11, color:"#a8b8b0", marginTop:20, textAlign:"center" }}>
+            データはこのブラウザのみに保存されます
+          </div>
+        </div>
+      );
+    }
+
+    /* ===== Root ===== */
+    function Root() {
+      const [accounts, setAccounts] = useState(() => {
+        try { return JSON.parse(localStorage.getItem("app_accounts") || "[]"); } catch { return []; }
+      });
+      const [sessionId, setSessionId] = useState(() => localStorage.getItem("app_session") || null);
+
+      const currentAccount = accounts.find(a => a.id === sessionId) || null;
+
+      const handleLogin = (name, password) => {
+        const acc = accounts.find(a => a.name === name && a.password === password);
+        if (!acc) return "名前またはパスワードが間違っています";
+        localStorage.setItem("app_session", acc.id);
+        setSessionId(acc.id);
+        return null;
+      };
+
+      const handleRegister = (name, password) => {
+        if (accounts.find(a => a.name === name)) return "そのアカウント名は既に使われています";
+        const newAcc = { id: Date.now().toString(), name, password };
+        const updated = [...accounts, newAcc];
+        setAccounts(updated);
+        localStorage.setItem("app_accounts", JSON.stringify(updated));
+        localStorage.setItem("app_session", newAcc.id);
+        setSessionId(newAcc.id);
+        return null;
+      };
+
+      const handleLogout = () => {
+        localStorage.removeItem("app_session");
+        setSessionId(null);
+      };
+
+      if (!currentAccount) {
+        return <LoginScreen accounts={accounts} onLogin={handleLogin} onRegister={handleRegister} />;
+      }
+
+      return <App accountId={currentAccount.id} accountName={currentAccount.name} onLogout={handleLogout} />;
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<Root/>);
   </script>
 </body>
 </html>
