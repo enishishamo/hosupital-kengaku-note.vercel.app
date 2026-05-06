@@ -2351,17 +2351,42 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
     }
 
     /* ===== Login Screen ===== */
-    function LoginScreen({ accounts, onLogin, onRegister }) {
-      const [mode, setMode] = useState(accounts.length === 0 ? "register" : "login");
-      const [name, setName] = useState("");
+    function LoginScreen() {
+      const [mode, setMode] = useState("login");
+      const [email, setEmail] = useState("");
       const [password, setPassword] = useState("");
       const [error, setError] = useState("");
+      const [info, setInfo] = useState("");
+      const [loading, setLoading] = useState(false);
 
-      const handleSubmit = e => {
+      const handleSubmit = async e => {
         e.preventDefault();
-        if (!name.trim() || !password.trim()) { setError("名前とパスワードを入力してください"); return; }
-        const err = mode === "login" ? onLogin(name.trim(), password) : onRegister(name.trim(), password);
-        if (err) setError(err);
+        if (!email.trim() || !password.trim()) { setError("メールアドレスとパスワードを入力してください"); return; }
+        if (password.length < 6) { setError("パスワードは6文字以上にしてください"); return; }
+        setError(""); setInfo(""); setLoading(true);
+        try {
+          if (mode === "login") {
+            const { error } = await window.supabase.auth.signInWithPassword({ email: email.trim(), password });
+            if (error) {
+              setError(error.message === "Invalid login credentials"
+                ? "メールアドレスまたはパスワードが間違っています"
+                : error.message);
+            }
+          } else {
+            const { data, error } = await window.supabase.auth.signUp({ email: email.trim(), password });
+            if (error) {
+              setError(error.message);
+            } else if (data?.session) {
+              // Email confirmation disabled: user is signed in immediately
+            } else {
+              setInfo("確認メールを送りました。メール内のリンクをクリックしてください。");
+            }
+          }
+        } catch (e) {
+          setError(e.message || "エラーが発生しました");
+        } finally {
+          setLoading(false);
+        }
       };
 
       return (
@@ -2405,10 +2430,11 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
 
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom:14 }}>
-                <label style={{ fontSize:12, fontWeight:700, color:"#4a6358", display:"block", marginBottom:6 }}>アカウント名</label>
+                <label style={{ fontSize:12, fontWeight:700, color:"#4a6358", display:"block", marginBottom:6 }}>メールアドレス</label>
                 <input
-                  value={name} onChange={e=>{ setName(e.target.value); setError(""); }}
-                  placeholder="例：田中一郎"
+                  type="email" value={email} onChange={e=>{ setEmail(e.target.value); setError(""); setInfo(""); }}
+                  placeholder="example@mail.com"
+                  autoComplete="email"
                   style={{
                     width:"100%", padding:"11px 14px", borderRadius:10,
                     border:"1.5px solid #d1ddd8", fontSize:15, background:"#fafcfb",
@@ -2418,8 +2444,9 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
               <div style={{ marginBottom:20 }}>
                 <label style={{ fontSize:12, fontWeight:700, color:"#4a6358", display:"block", marginBottom:6 }}>パスワード</label>
                 <input
-                  type="password" value={password} onChange={e=>{ setPassword(e.target.value); setError(""); }}
-                  placeholder="パスワードを入力"
+                  type="password" value={password} onChange={e=>{ setPassword(e.target.value); setError(""); setInfo(""); }}
+                  placeholder="6文字以上"
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
                   style={{
                     width:"100%", padding:"11px 14px", borderRadius:10,
                     border:"1.5px solid #d1ddd8", fontSize:15, background:"#fafcfb",
@@ -2427,75 +2454,176 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                 />
               </div>
               {error && <div style={{ fontSize:13, color:"#c0392b", marginBottom:14, padding:"8px 12px", background:"#fef0ee", borderRadius:8 }}>{error}</div>}
-              <button type="submit" style={{
+              {info && <div style={{ fontSize:13, color:"#0a6e52", marginBottom:14, padding:"8px 12px", background:"#e8f5f0", borderRadius:8 }}>{info}</div>}
+              <button type="submit" disabled={loading} style={{
                 width:"100%", padding:"13px 0", borderRadius:12, border:"none",
-                background:"linear-gradient(135deg,#0f8a6c,#085c48)", color:"#fff",
-                fontWeight:900, fontSize:16, cursor:"pointer",
+                background: loading ? "#a8c4ba" : "linear-gradient(135deg,#0f8a6c,#085c48)", color:"#fff",
+                fontWeight:900, fontSize:16, cursor: loading ? "wait" : "pointer",
                 boxShadow:"0 4px 14px rgba(15,138,108,0.35)", letterSpacing:0.5,
               }}>
-                {mode === "login" ? "ログイン" : "アカウントを作成"}
+                {loading ? "処理中..." : (mode === "login" ? "ログイン" : "アカウントを作成")}
               </button>
             </form>
-
-            {accounts.length > 0 && (
-              <div style={{ marginTop:20, paddingTop:16, borderTop:"1px solid #e8f0eb" }}>
-                <div style={{ fontSize:11, color:"#9ab3a8", marginBottom:8, textAlign:"center" }}>登録済みアカウント</div>
-                {accounts.map(a => (
-                  <div key={a.id} style={{
-                    fontSize:13, color:"#4a6358", padding:"6px 10px", borderRadius:8,
-                    background:"#f5faf8", marginBottom:4, cursor:"pointer",
-                  }} onClick={() => { setName(a.name); setMode("login"); }}>
-                    👤 {a.name}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
           <div style={{ fontSize:11, color:"#a8b8b0", marginTop:20, textAlign:"center" }}>
-            データはこのブラウザのみに保存されます
+            データはクラウド（Supabase）に保存されます
           </div>
         </div>
       );
     }
 
-    /* ===== Root ===== */
-    function Root() {
-      const [accounts, setAccounts] = useState(() => {
+    /* ===== Migration Prompt: import legacy localStorage data into the new auth account ===== */
+    function MigrationPrompt({ authUser, onDone }) {
+      const [importing, setImporting] = useState(false);
+      const [error, setError] = useState("");
+
+      const oldAccounts = (() => {
         try { return JSON.parse(localStorage.getItem("app_accounts") || "[]"); } catch { return []; }
+      })();
+      const accountsWithData = oldAccounts.map(a => {
+        let count = 0;
+        try { count = JSON.parse(localStorage.getItem(`${a.id}_byouin_v2`) || "[]").length; } catch {}
+        return { ...a, count };
       });
-      const [sessionId, setSessionId] = useState(() => localStorage.getItem("app_session") || null);
 
-      const currentAccount = accounts.find(a => a.id === sessionId) || null;
+      const importFrom = async (oldId, oldName) => {
+        setImporting(true); setError("");
+        try {
+          const sk = k => `${oldId}_${k}`;
+          const hospitals = JSON.parse(localStorage.getItem(sk("byouin_v2")) || "[]");
+          const scheduleEvents = JSON.parse(localStorage.getItem(sk("scheduleEvents")) || "[]");
+          const customCategories = JSON.parse(localStorage.getItem(sk("customCategories")) || "[]");
+          const packingItemsRaw = localStorage.getItem(sk("packingItems"));
+          const packingItems = packingItemsRaw ? JSON.parse(packingItemsRaw) : null;
+          const weightsRaw = localStorage.getItem(sk("byouin_weights"));
+          const weights = weightsRaw ? JSON.parse(weightsRaw) : null;
 
-      const handleLogin = (name, password) => {
-        const acc = accounts.find(a => a.name === name && a.password === password);
-        if (!acc) return "名前またはパスワードが間違っています";
-        localStorage.setItem("app_session", acc.id);
-        setSessionId(acc.id);
-        return null;
+          const now = new Date().toISOString();
+          const { error: e1 } = await window.supabase.from("hospitals").upsert(
+            { account_id: authUser.id, data: hospitals, updated_at: now },
+            { onConflict: "account_id" }
+          );
+          if (e1) throw e1;
+
+          const inserts = [];
+          if (Array.isArray(scheduleEvents)) inserts.push({ account_id: authUser.id, data_key: "scheduleEvents", data: scheduleEvents, updated_at: now });
+          if (Array.isArray(customCategories)) inserts.push({ account_id: authUser.id, data_key: "customCategories", data: customCategories, updated_at: now });
+          if (packingItems) inserts.push({ account_id: authUser.id, data_key: "packingItems", data: packingItems, updated_at: now });
+          if (weights) inserts.push({ account_id: authUser.id, data_key: "weights", data: weights, updated_at: now });
+          if (inserts.length) {
+            const { error: e2 } = await window.supabase.from("user_data").upsert(inserts, { onConflict: "account_id,data_key" });
+            if (e2) throw e2;
+          }
+
+          // Mirror to localStorage under the new auth uid as well so initial render has data
+          localStorage.setItem(`${authUser.id}_byouin_v2`, JSON.stringify(hospitals));
+          if (Array.isArray(scheduleEvents)) localStorage.setItem(`${authUser.id}_scheduleEvents`, JSON.stringify(scheduleEvents));
+          if (Array.isArray(customCategories)) localStorage.setItem(`${authUser.id}_customCategories`, JSON.stringify(customCategories));
+          if (packingItems) localStorage.setItem(`${authUser.id}_packingItems`, JSON.stringify(packingItems));
+          if (weights) localStorage.setItem(`${authUser.id}_byouin_weights`, JSON.stringify(weights));
+
+          localStorage.setItem(`migration_done_${authUser.id}`, "true");
+          onDone();
+        } catch (e) {
+          setError(`インポートに失敗しました: ${e.message || e}`);
+        } finally {
+          setImporting(false);
+        }
       };
 
-      const handleRegister = (name, password) => {
-        if (accounts.find(a => a.name === name)) return "そのアカウント名は既に使われています";
-        const newAcc = { id: Date.now().toString(), name, password };
-        const updated = [...accounts, newAcc];
-        setAccounts(updated);
-        localStorage.setItem("app_accounts", JSON.stringify(updated));
-        localStorage.setItem("app_session", newAcc.id);
-        setSessionId(newAcc.id);
-        return null;
+      const skip = () => {
+        localStorage.setItem(`migration_done_${authUser.id}`, "true");
+        onDone();
       };
 
-      const handleLogout = () => {
-        localStorage.removeItem("app_session");
-        setSessionId(null);
+      return (
+        <div style={{
+          minHeight:"100vh", background:"linear-gradient(170deg,#f0f6f3 0%,#e8f0eb 50%,#f5f8f6 100%)",
+          display:"flex", alignItems:"center", justifyContent:"center", padding:"24px",
+        }}>
+          <div style={{
+            background:"#fff", borderRadius:20, padding:"28px", maxWidth:420, width:"100%",
+            boxShadow:"0 4px 24px rgba(0,0,0,0.08)",
+          }}>
+            <div style={{ fontSize:22, fontWeight:900, color:"#1a2e24", marginBottom:8 }}>📦 過去のデータが見つかりました</div>
+            <div style={{ fontSize:14, color:"#4a6358", marginBottom:20, lineHeight:1.6 }}>
+              以前このブラウザで作ったアカウントのデータを、新しいクラウドアカウントに引き継げます。<br/>
+              引き継ぎたいアカウントを選んでください。
+            </div>
+            {accountsWithData.length === 0 ? (
+              <div style={{ fontSize:13, color:"#7a9489", marginBottom:16 }}>引き継ぎ可能なデータが見つかりません。</div>
+            ) : accountsWithData.map(a => (
+              <button key={a.id} onClick={() => importFrom(a.id, a.name)} disabled={importing}
+                style={{
+                  width:"100%", padding:"14px 16px", marginBottom:8, border:"1.5px solid #0f8a6c",
+                  borderRadius:12, background:"#fff", cursor: importing ? "wait" : "pointer",
+                  textAlign:"left", fontSize:14, color:"#1a2e24",
+                }}>
+                <div style={{ fontWeight:700 }}>👤 {a.name}</div>
+                <div style={{ fontSize:12, color:"#6a8c7f", marginTop:2 }}>病院データ {a.count}件</div>
+              </button>
+            ))}
+            {error && <div style={{ fontSize:13, color:"#c0392b", marginTop:8, padding:"8px 12px", background:"#fef0ee", borderRadius:8 }}>{error}</div>}
+            <button onClick={skip} disabled={importing} style={{
+              width:"100%", padding:"12px 0", marginTop:12, border:"none", borderRadius:12,
+              background:"#f0f6f3", color:"#4a6358", fontWeight:700, fontSize:14,
+              cursor: importing ? "wait" : "pointer",
+            }}>
+              スキップ（新規スタート）
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    /* ===== Root: Supabase Auth-driven ===== */
+    function Root() {
+      const [authUser, setAuthUser] = useState(null);
+      const [authLoading, setAuthLoading] = useState(true);
+      const [migrationState, setMigrationState] = useState("checking"); // checking | needed | done
+
+      React.useEffect(() => {
+        if (!window.supabase) { setAuthLoading(false); return; }
+        window.supabase.auth.getSession().then(({ data: { session } }) => {
+          setAuthUser(session?.user ?? null);
+          setAuthLoading(false);
+        });
+        const { data: { subscription } } = window.supabase.auth.onAuthStateChange((_event, session) => {
+          setAuthUser(session?.user ?? null);
+        });
+        return () => subscription?.unsubscribe();
+      }, []);
+
+      // After login, decide whether to show migration prompt
+      React.useEffect(() => {
+        if (!authUser) { setMigrationState("checking"); return; }
+        const alreadyMigrated = localStorage.getItem(`migration_done_${authUser.id}`) === "true";
+        if (alreadyMigrated) { setMigrationState("done"); return; }
+        let oldAccounts = [];
+        try { oldAccounts = JSON.parse(localStorage.getItem("app_accounts") || "[]"); } catch {}
+        const hasLegacyData = oldAccounts.some(a => {
+          const raw = localStorage.getItem(`${a.id}_byouin_v2`);
+          if (!raw) return false;
+          try { return JSON.parse(raw).length > 0; } catch { return false; }
+        });
+        setMigrationState(hasLegacyData ? "needed" : "done");
+      }, [authUser]);
+
+      const handleLogout = async () => {
+        try { await window.supabase.auth.signOut(); } catch (e) { console.error(e); }
       };
 
-      if (!currentAccount) {
-        return <LoginScreen accounts={accounts} onLogin={handleLogin} onRegister={handleRegister} />;
+      if (authLoading) {
+        return <div style={{ padding:40, textAlign:"center", color:"#4a6358" }}>読み込み中...</div>;
       }
-
-      return <App accountId={currentAccount.id} accountName={currentAccount.name} onLogout={handleLogout} />;
+      if (!authUser) return <LoginScreen />;
+      if (migrationState === "checking") {
+        return <div style={{ padding:40, textAlign:"center", color:"#4a6358" }}>確認中...</div>;
+      }
+      if (migrationState === "needed") {
+        return <MigrationPrompt authUser={authUser} onDone={() => setMigrationState("done")} />;
+      }
+      return <App accountId={authUser.id} accountName={authUser.email} onLogout={handleLogout} />;
     }
 
     ReactDOM.createRoot(document.getElementById("root")).render(<Root/>);
