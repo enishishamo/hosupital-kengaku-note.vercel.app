@@ -10,7 +10,7 @@
   <script type="module">
     // Supabase client initialization (Phase 2)
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
-    const SUPABASE_URL = "https://vbpypgjjnvcfaffhnku.supabase.co";
+    const SUPABASE_URL = "https://vbpvpyjjnvcifaffhnku.supabase.co";
     const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_yPwyoqo0CReMWMTPO6LspA_0tJXu_6e";
     window.supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
     console.log("[Supabase] initialized:", SUPABASE_URL);
@@ -957,6 +957,21 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
         try { return JSON.parse(localStorage.getItem(sk("byouin_v2")) || "[]"); }
         catch { return []; }
       });
+      // Supabase load gate: prevent save useEffects from running until remote load completes
+      const [supabaseLoaded, setSupabaseLoaded] = useState(false);
+      // Helper: upsert a key/value to the generic user_data table
+      const saveUserData = (key, value) => {
+        if (!window.supabase || !accountId) return;
+        window.supabase
+          .from("user_data")
+          .upsert(
+            { account_id: accountId, data_key: key, data: value, updated_at: new Date().toISOString() },
+            { onConflict: "account_id,data_key" }
+          )
+          .then(({ error }) => {
+            if (error) console.error(`[Supabase] save ${key} failed:`, error);
+          });
+      };
       const [view, setView]             = useState("list");
       const [form, setForm]             = useState({...EMPTY_FORM, ratings:emptyRatings(), checklist:emptyChecklist(), photos:[]});
       const [selected, setSelected]     = useState(null);
@@ -975,14 +990,16 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
       });
       React.useEffect(() => {
         localStorage.setItem(sk("scheduleEvents"), JSON.stringify(scheduleEvents));
-      }, [scheduleEvents]);
+        if (supabaseLoaded) saveUserData("scheduleEvents", scheduleEvents);
+      }, [scheduleEvents, supabaseLoaded]);
       const [customCategories, setCustomCategories] = useState(() => {
         try { return JSON.parse(localStorage.getItem(sk("customCategories")) || "[]"); }
         catch { return []; }
       });
       React.useEffect(() => {
         localStorage.setItem(sk("customCategories"), JSON.stringify(customCategories));
-      }, [customCategories]);
+        if (supabaseLoaded) saveUserData("customCategories", customCategories);
+      }, [customCategories, supabaseLoaded]);
       const allCategories = [...CATEGORIES, ...customCategories];
       const [packingChecks, setPackingChecks] = useState({});
       const DEFAULT_PACKING = [
@@ -998,7 +1015,8 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
       });
       React.useEffect(() => {
         localStorage.setItem(sk("packingItems"), JSON.stringify(packingItems));
-      }, [packingItems]);
+        if (supabaseLoaded) saveUserData("packingItems", packingItems);
+      }, [packingItems, supabaseLoaded]);
       const [weights, setWeights] = useState(() => {
         try { return JSON.parse(localStorage.getItem(sk("byouin_weights")) || "null") || {...DEFAULT_WEIGHTS}; }
         catch { return {...DEFAULT_WEIGHTS}; }
@@ -1006,13 +1024,65 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
 
       useEffect(() => {
         try { localStorage.setItem(sk("byouin_weights"), JSON.stringify(weights)); } catch {}
-      }, [weights]);
+        if (supabaseLoaded) saveUserData("weights", weights);
+      }, [weights, supabaseLoaded]);
+
+      // Combined Supabase load: fetch all data types in parallel, then unlock saves
+      React.useEffect(() => {
+        if (!window.supabase || !accountId) { setSupabaseLoaded(true); return; }
+        const loadKey = (key) => window.supabase
+          .from("user_data").select("data")
+          .eq("account_id", accountId).eq("data_key", key).maybeSingle();
+        Promise.all([
+          window.supabase.from("hospitals").select("data").eq("account_id", accountId).maybeSingle()
+            .then(({ data, error }) => {
+              if (error) console.error("[Supabase] load hospitals failed:", error);
+              else if (data && Array.isArray(data.data)) {
+                console.log("[Supabase] loaded", data.data.length, "hospitals");
+                setHospitals(data.data);
+              }
+            }),
+          loadKey("scheduleEvents").then(({ data, error }) => {
+            if (error) console.error("[Supabase] load scheduleEvents failed:", error);
+            else if (data && Array.isArray(data.data)) setScheduleEvents(data.data);
+          }),
+          loadKey("customCategories").then(({ data, error }) => {
+            if (error) console.error("[Supabase] load customCategories failed:", error);
+            else if (data && Array.isArray(data.data)) setCustomCategories(data.data);
+          }),
+          loadKey("packingItems").then(({ data, error }) => {
+            if (error) console.error("[Supabase] load packingItems failed:", error);
+            else if (data && Array.isArray(data.data)) setPackingItems(data.data);
+          }),
+          loadKey("weights").then(({ data, error }) => {
+            if (error) console.error("[Supabase] load weights failed:", error);
+            else if (data && data.data && typeof data.data === "object") setWeights(data.data);
+          }),
+        ]).finally(() => {
+          console.log("[Supabase] initial load complete");
+          setSupabaseLoaded(true);
+        });
+      }, [accountId]);
 
       const hasCustomWeights = CATEGORIES.some(c => weights[c.key] !== 2);
 
       useEffect(() => {
         try { localStorage.setItem(sk("byouin_v2"), JSON.stringify(hospitals)); } catch {}
-      }, [hospitals]);
+        // Dual-write to Supabase (Phase 3): wait for initial load to avoid clobbering remote data
+        if (!supabaseLoaded) return;
+        if (window.supabase && accountId) {
+          window.supabase
+            .from("hospitals")
+            .upsert(
+              { account_id: accountId, data: hospitals, updated_at: new Date().toISOString() },
+              { onConflict: "account_id" }
+            )
+            .then(({ error }) => {
+              if (error) console.error("[Supabase] save failed:", error);
+              else console.log("[Supabase] saved", hospitals.length, "hospitals");
+            });
+        }
+      }, [hospitals, supabaseLoaded]);
 
       const avgRating = h => {
         const totalWeight = allCategories.reduce((s,c) => { const w=weights[c.key]??2; return s+(w>0?w:0); }, 0);
