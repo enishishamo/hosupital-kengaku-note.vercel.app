@@ -67,6 +67,9 @@
       });
     }
   </script>
+  <!-- Vercel Web Analytics: Vercel管理画面で Analytics を有効化すると計測される -->
+  <script defer src="/_vercel/insights/script.js"></script>
+  <script defer src="/_vercel/speed-insights/script.js"></script>
   <link rel="icon" type="image/svg+xml" href="icon.svg"/>
   <link rel="apple-touch-icon" href="icon.svg"/>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -108,6 +111,9 @@
     const { useState, useEffect, useRef, useCallback } = React;
 
     /* ===== 定数 ===== */
+    // フィードバック窓口（Googleフォーム）。フォーム作成後にURLを差し替える。
+    const FEEDBACK_URL = "https://forms.gle/REPLACE_ME";
+
     const CATEGORIES = [
       { key: "residentAtmosphere", label: "研修医の雰囲気", icon: "🩺" },
       { key: "mentoring",          label: "指導体制",       icon: "👨‍⚕️" },
@@ -2394,8 +2400,30 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                   </div>
                 )}
 
+                {/* フィードバックボタン */}
+                <div style={{ marginTop:32 }}>
+                  <button
+                    onClick={() => {
+                      if (FEEDBACK_URL.includes("REPLACE_ME")) {
+                        alert("フィードバックフォームは準備中です。もうしばらくお待ちください。");
+                        return;
+                      }
+                      window.open(FEEDBACK_URL, "_blank", "noopener");
+                    }}
+                    style={{
+                      width:"100%", padding:"13px 16px", borderRadius:12,
+                      border:"1.5px solid #0f8a6c", background:"#fff", color:"#0a6e52",
+                      fontSize:14, fontWeight:700, cursor:"pointer",
+                      display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+                    }}
+                  >💬 ご意見・バグ報告</button>
+                  <div style={{ fontSize:11, color:"#a8b8b0", textAlign:"center", marginTop:6 }}>
+                    気づいた点・ほしい機能を教えてください
+                  </div>
+                </div>
+
                 {/* 法的情報リンク */}
-                <div style={{ marginTop:32, padding:"18px 14px 4px", textAlign:"center", borderTop:"1px solid #e4ece8" }}>
+                <div style={{ marginTop:24, padding:"18px 14px 4px", textAlign:"center", borderTop:"1px solid #e4ece8" }}>
                   <a href="terms.html" target="_blank" rel="noopener" style={{ color:"#7a9489", fontSize:12, textDecoration:"none", margin:"0 10px" }}>利用規約</a>
                   ｜
                   <a href="privacy.html" target="_blank" rel="noopener" style={{ color:"#7a9489", fontSize:12, textDecoration:"none", margin:"0 10px" }}>プライバシーポリシー</a>
@@ -2472,7 +2500,7 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
             width:"100%", maxWidth:360, boxShadow:"0 4px 24px rgba(0,0,0,0.08)",
           }}>
             {/* タブ */}
-            <div style={{ display:"flex", marginBottom:24, background:"#f0f6f3", borderRadius:12, padding:4 }}>
+            <div style={{ display:"flex", marginBottom:20, background:"#f0f6f3", borderRadius:12, padding:4 }}>
               {[["login","ログイン"], ["register","新規作成"]].map(([m, label]) => (
                 <button key={m} onClick={() => { setMode(m); setError(""); }}
                   style={{
@@ -2485,6 +2513,46 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                   }}
                 >{label}</button>
               ))}
+            </div>
+
+            {/* Googleログイン */}
+            <button
+              type="button"
+              disabled={loading}
+              onClick={async () => {
+                setError(""); setInfo("");
+                try {
+                  const { error: oauthError } = await window.supabase.auth.signInWithOAuth({
+                    provider: "google",
+                    options: { redirectTo: window.location.origin },
+                  });
+                  if (oauthError) setError(oauthError.message);
+                } catch (e) {
+                  setError(e.message || "Googleログインに失敗しました");
+                }
+              }}
+              style={{
+                width:"100%", padding:"11px 0", borderRadius:12,
+                border:"1.5px solid #d1ddd8", background:"#fff", color:"#1a2e24",
+                fontSize:14, fontWeight:700, cursor: loading ? "wait" : "pointer",
+                display:"flex", alignItems:"center", justifyContent:"center", gap:10,
+                marginBottom:16,
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M16.51 8.16h-7.5v3.04h4.32a3.7 3.7 0 0 1-1.6 2.43v2.02h2.59a7.83 7.83 0 0 0 2.39-5.92c0-.55-.05-1.08-.2-1.57z" fill="#4285F4"/>
+                <path d="M9.01 17a7.7 7.7 0 0 0 5.32-1.94l-2.6-2.02a4.83 4.83 0 0 1-7.18-2.54H1.87v2.07A8 8 0 0 0 9.01 17z" fill="#34A853"/>
+                <path d="M4.55 10.5a4.83 4.83 0 0 1 0-3.07V5.36H1.87a8 8 0 0 0 0 7.21l2.68-2.07z" fill="#FBBC05"/>
+                <path d="M9.01 4.18c1.32 0 2.5.46 3.43 1.34l2.3-2.3A7.69 7.69 0 0 0 9.01 1a8 8 0 0 0-7.14 4.36l2.68 2.07A4.77 4.77 0 0 1 9.01 4.18z" fill="#EA4335"/>
+              </svg>
+              Googleで{mode === "login" ? "ログイン" : "登録"}
+            </button>
+
+            {/* 区切り */}
+            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:18 }}>
+              <div style={{ flex:1, height:1, background:"#e4ece8" }} />
+              <div style={{ fontSize:11, color:"#a8b8b0" }}>または</div>
+              <div style={{ flex:1, height:1, background:"#e4ece8" }} />
             </div>
 
             <form onSubmit={handleSubmit}>
