@@ -2393,6 +2393,14 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                     </div>
                   </div>
                 )}
+
+                {/* 法的情報リンク */}
+                <div style={{ marginTop:32, padding:"18px 14px 4px", textAlign:"center", borderTop:"1px solid #e4ece8" }}>
+                  <a href="terms.html" target="_blank" rel="noopener" style={{ color:"#7a9489", fontSize:12, textDecoration:"none", margin:"0 10px" }}>利用規約</a>
+                  ｜
+                  <a href="privacy.html" target="_blank" rel="noopener" style={{ color:"#7a9489", fontSize:12, textDecoration:"none", margin:"0 10px" }}>プライバシーポリシー</a>
+                  <div style={{ fontSize:11, color:"#a8b8b0", marginTop:8 }}>© ドクたま病院見学ノート</div>
+                </div>
               </div>
             )}
 
@@ -2514,6 +2522,15 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
               }}>
                 {loading ? "処理中..." : (mode === "login" ? "ログイン" : "アカウントを作成")}
               </button>
+              {mode === "register" && (
+                <div style={{ fontSize:11, color:"#7a9489", marginTop:12, textAlign:"center", lineHeight:1.7 }}>
+                  「アカウントを作成」を押すことで、<br/>
+                  <a href="terms.html" target="_blank" rel="noopener" style={{ color:"#0a6e52", textDecoration:"underline" }}>利用規約</a>
+                  および
+                  <a href="privacy.html" target="_blank" rel="noopener" style={{ color:"#0a6e52", textDecoration:"underline" }}>プライバシーポリシー</a>
+                  に同意したものとみなします
+                </div>
+              )}
             </form>
           </div>
           <div style={{ fontSize:11, color:"#a8b8b0", marginTop:20, textAlign:"center" }}>
@@ -2630,6 +2647,11 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
 
           {/* Footer */}
           <div style={{ background:"#1a2e24", color:"rgba(255,255,255,0.6)", padding:"24px 20px", textAlign:"center", fontSize:12, lineHeight:1.7 }}>
+            <div style={{ marginBottom:8 }}>
+              <a href="terms.html" style={{ color:"rgba(255,255,255,0.88)", margin:"0 8px", textDecoration:"none" }}>利用規約</a>
+              ｜
+              <a href="privacy.html" style={{ color:"rgba(255,255,255,0.88)", margin:"0 8px", textDecoration:"none" }}>プライバシーポリシー</a>
+            </div>
             <div>© ドクたま病院見学ノート</div>
             <div style={{ marginTop:4, opacity:0.7 }}>データはSupabase（クラウド）に安全に保存されます</div>
           </div>
