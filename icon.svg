@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#12b080"/>
+      <stop offset="100%" stop-color="#0a6e52"/>
+    </linearGradient>
+    <linearGradient id="shine" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="rgba(255,255,255,0.18)"/>
+      <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 背景: 丸角正方形 -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#shine)"/>
+
+  <!-- クリップボード本体 -->
+  <rect x="112" y="108" width="288" height="330" rx="22" fill="white" opacity="0.97"/>
+
+  <!-- クリップボード上部クリップ -->
+  <rect x="196" y="90" width="120" height="44" rx="14" fill="#0a8a68"/>
+  <rect x="220" y="96" width="72" height="32" rx="9" fill="white" opacity="0.9"/>
+  <circle cx="256" cy="112" r="10" fill="#0a8a68"/>
+
+  <!-- 十字マーク (医療) -->
+  <rect x="228" y="172" width="56" height="18" rx="9" fill="#0f8a6c"/>
+  <rect x="247" y="153" width="18" height="56" rx="9" fill="#0f8a6c"/>
+
+  <!-- 星3つ (評価) -->
+  <!-- 星1 -->
+  <text x="142" y="298" font-size="52" fill="#f0c040" font-family="sans-serif">★</text>
+  <!-- 星2 -->
+  <text x="202" y="298" font-size="52" fill="#f0c040" font-family="sans-serif">★</text>
+  <!-- 星3 -->
+  <text x="262" y="298" font-size="52" fill="#f0c040" font-family="sans-serif">★</text>
+  <!-- 星4 (少し薄め) -->
+  <text x="322" y="298" font-size="52" fill="#f0c040" font-family="sans-serif">★</text>
+
+  <!-- 線(メモ行) -->
+  <rect x="142" y="320" width="228" height="12" rx="6" fill="#e0ede8"/>
+  <rect x="142" y="348" width="180" height="12" rx="6" fill="#e0ede8"/>
+  <rect x="142" y="376" width="204" height="12" rx="6" fill="#e0ede8"/>
+</svg>
