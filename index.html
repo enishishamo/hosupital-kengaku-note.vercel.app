@@ -2624,12 +2624,11 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
     /* ===== Landing Page: shown to first-time visitors before login screen ===== */
     function LandingPage({ onStart }) {
       const features = [
-        { icon:"📝", title:"8カテゴリで評価", desc:"研修医の雰囲気・指導体制・救急・労働環境など8項目を5段階で記録" },
+        { icon:"📝", title:"8項目+独自カテゴリで評価", desc:"研修医の雰囲気・指導体制・救急など標準8項目に加え、自分独自の評価軸も追加・削除して、自分の重視ポイントで記録できる" },
         { icon:"📊", title:"比較・ランキング", desc:"気になる病院を並べて比較。重みづけ可能な総合ランキングも自動算出" },
         { icon:"📅", title:"スケジュール管理", desc:"レジナビ・見学・試験の予定をカレンダーで一元管理" },
         { icon:"📷", title:"写真とメモを保存", desc:"見学のチェックリスト・写真・面接で聞かれたことまで全部記録" },
         { icon:"☁️", title:"全端末で同期", desc:"PCで記録してスマホで見返す。クラウド保存で端末をまたいで使える" },
-        { icon:"🆓", title:"完全無料", desc:"アカウント登録のみで全機能が使える。広告なし。" },
       ];
       return (
         <div style={{
@@ -2662,7 +2661,7 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
               fontSize:16, fontWeight:900, cursor:"pointer",
               boxShadow:"0 8px 24px rgba(0,0,0,0.18)",
               letterSpacing:0.5,
-            }}>無料で使ってみる →</button>
+            }}>使ってみる →</button>
             <div style={{ fontSize:12, marginTop:12, opacity:0.7 }}>
               アカウント登録（メール+パスワード）で全機能利用可能
             </div>
@@ -2715,7 +2714,7 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                   background:"linear-gradient(135deg,#0f8a6c,#085c48)", color:"#fff",
                   fontSize:16, fontWeight:900, cursor:"pointer",
                   boxShadow:"0 8px 24px rgba(15,138,108,0.35)", letterSpacing:0.5,
-                }}>無料で始める →</button>
+                }}>いますぐ始める →</button>
               </div>
             </div>
           </div>
