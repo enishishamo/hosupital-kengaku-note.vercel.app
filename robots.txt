@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /_vercel/
+
+Sitemap: https://hospital-visit-app.vercel.app/sitemap.xml
