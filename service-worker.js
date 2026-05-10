@@ -2,8 +2,8 @@
 // Keep it intentionally light — the app uses Supabase as source of truth and
 // localStorage as cache, so we don't aggressively pre-cache asset bundles.
 
-const CACHE_NAME = "doctama-v1";
-const SHELL = ["/", "/index.html", "/icon.svg", "/manifest.json"];
+const CACHE_NAME = "doctama-v2";
+const SHELL = ["/", "/index.html", "/icon.png", "/manifest.json"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
