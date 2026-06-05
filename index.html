@@ -2452,7 +2452,8 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
       const handleSubmit = async e => {
         e.preventDefault();
         if (!email.trim() || !password.trim()) { setError("メールアドレスとパスワードを入力してください"); return; }
-        if (password.length < 6) { setError("パスワードは6文字以上にしてください"); return; }
+        // Enforce 8+ chars only on signup; allow existing users (who may have 6-7 char passwords) to still log in
+        if (mode === "register" && password.length < 8) { setError("パスワードは8文字以上にしてください"); return; }
         setError(""); setInfo(""); setLoading(true);
         try {
           if (mode === "login") {
@@ -2579,7 +2580,7 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                 <label style={{ fontSize:12, fontWeight:700, color:"#4a6358", display:"block", marginBottom:6 }}>パスワード</label>
                 <input
                   type="password" value={password} onChange={e=>{ setPassword(e.target.value); setError(""); setInfo(""); }}
-                  placeholder="6文字以上"
+                  placeholder={mode === "register" ? "8文字以上" : "パスワード"}
                   autoComplete={mode === "login" ? "current-password" : "new-password"}
                   style={{
                     width:"100%", padding:"11px 14px", borderRadius:10,
@@ -2872,6 +2873,19 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
       }, [authUser]);
 
       const handleLogout = async () => {
+        // Clear current user's local data before sign-out so shared devices don't leak between users
+        const uid = authUser?.id;
+        if (uid) {
+          try {
+            const prefix = `${uid}_`;
+            const toRemove = [];
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (k && (k.startsWith(prefix) || k === `migration_done_${uid}`)) toRemove.push(k);
+            }
+            toRemove.forEach(k => localStorage.removeItem(k));
+          } catch (e) { console.error("[logout] localStorage clear failed:", e); }
+        }
         try { await window.supabase.auth.signOut(); } catch (e) { console.error(e); }
       };
 
