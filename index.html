@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- Content Security Policy: limit blast radius if XSS ever lands. unsafe-eval is required by Babel standalone (runtime JSX transform). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co https://vitals.vercel-insights.com; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; object-src 'none'" />
   <title>ドクたま病院見学ノート｜初期研修先選びを見える化するアプリ</title>
   <meta name="description" content="医学生・初期研修医のための病院見学ノート。8カテゴリで5段階評価し、見学した病院を比較・ランキング。レジナビや見学のスケジュール管理もできる無料アプリ。"/>
   <meta name="keywords" content="病院見学,初期研修,マッチング,病院比較,研修医,医学生,レジナビ,病院選び,研修病院,ドクたま"/>
@@ -48,9 +50,16 @@
   }
   </script>
 
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Pinned versions + Subresource Integrity: CDN tampering will be detected and the script blocked. -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"
+    integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"
+    integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1"
+    crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"
+    integrity="sha384-EIcs2MbARRLcLs7Gv2wqqhhfMlcLeW9yuJsWki1r5iveN1F5gpzHOwAKycJqSQOI"
+    crossorigin="anonymous"></script>
   <script type="module">
     // Supabase client initialization (Phase 2)
     import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
