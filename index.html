@@ -2436,9 +2436,9 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
 
                 {/* 法的情報リンク */}
                 <div style={{ marginTop:24, padding:"18px 14px 4px", textAlign:"center", borderTop:"1px solid #e4ece8" }}>
-                  <a href="terms.html" target="_blank" rel="noopener" style={{ color:"#7a9489", fontSize:12, textDecoration:"none", margin:"0 10px" }}>利用規約</a>
+                  <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ color:"#7a9489", fontSize:12, textDecoration:"none", margin:"0 10px" }}>利用規約</a>
                   ｜
-                  <a href="privacy.html" target="_blank" rel="noopener" style={{ color:"#7a9489", fontSize:12, textDecoration:"none", margin:"0 10px" }}>プライバシーポリシー</a>
+                  <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ color:"#7a9489", fontSize:12, textDecoration:"none", margin:"0 10px" }}>プライバシーポリシー</a>
                   <div style={{ fontSize:11, color:"#a8b8b0", marginTop:8 }}>© ドクたま病院見学ノート</div>
                 </div>
               </div>
@@ -2475,9 +2475,15 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
           } else {
             const { data, error } = await window.supabase.auth.signUp({ email: email.trim(), password });
             if (error) {
-              setError(error.message);
+              // 「User already registered」等の生メッセージはuser enumerationを許すので汎用化
+              const raw = error.message || "";
+              if (/already registered|already exists/i.test(raw)) {
+                setError("登録できませんでした。しばらくしてから再度お試しください。");
+              } else {
+                setError(raw || "登録に失敗しました");
+              }
             } else if (data?.session) {
-              // Email confirmation disabled: user is signed in immediately
+              // Email confirmation OFF: 即ログイン
             } else {
               setInfo("確認メールを送りました。メール内のリンクをクリックしてください。");
             }
@@ -2610,9 +2616,9 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
               {mode === "register" && (
                 <div style={{ fontSize:11, color:"#7a9489", marginTop:12, textAlign:"center", lineHeight:1.7 }}>
                   「アカウントを作成」を押すことで、<br/>
-                  <a href="terms.html" target="_blank" rel="noopener" style={{ color:"#0a6e52", textDecoration:"underline" }}>利用規約</a>
+                  <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ color:"#0a6e52", textDecoration:"underline" }}>利用規約</a>
                   および
-                  <a href="privacy.html" target="_blank" rel="noopener" style={{ color:"#0a6e52", textDecoration:"underline" }}>プライバシーポリシー</a>
+                  <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ color:"#0a6e52", textDecoration:"underline" }}>プライバシーポリシー</a>
                   に同意したものとみなします
                 </div>
               )}
