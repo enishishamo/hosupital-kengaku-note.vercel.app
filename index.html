@@ -1467,7 +1467,10 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                   overflowY:"auto", padding:"22px 18px 32px",
                   animation:"fadeUp .28s ease",
                 }}>
-                  <div style={{ width:36, height:4, borderRadius:2, background:"#d1ddd8", margin:"0 auto 16px" }}/>
+                  <div onClick={() => { setSelected(null); setConfirmDel(null); }}
+                    style={{ display:"flex", justifyContent:"center", padding:"2px 0 14px", marginTop:-6, cursor:"pointer" }}>
+                    <div style={{ width:44, height:5, borderRadius:3, background:"#d1ddd8" }}/>
+                  </div>
 
                   <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:3 }}>
                     <div style={{ fontSize:20, fontWeight:900, color:"#1a2e24" }}>{selected.name}</div>
@@ -1724,6 +1727,10 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                       }}>削除</button>
                     )}
                   </div>
+                  <button onClick={()=>{ setSelected(null); setConfirmDel(null); }} className="no-print" style={{
+                    width:"100%", marginTop:14, padding:"13px", borderRadius:12, border:"none",
+                    background:"#f0f4f2", color:"#4a6358", fontWeight:700, fontSize:14, cursor:"pointer",
+                  }}>閉じる</button>
                 </div>
               </div>
             )}
