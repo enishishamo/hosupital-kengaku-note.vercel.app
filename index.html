@@ -741,6 +741,7 @@
     /* ===== RadarChart ===== */
     function RadarChart({ ratings, size = 220, categories = CATEGORIES }) {
       const cx = size/2, cy = size/2, r = size * 0.33;
+      const PAD_X = 44, PAD_Y = 16; // extra viewport room so edge labels (e.g. 救急の充実度) aren't clipped
       const n = categories.length;
       const angle = i => Math.PI*2*i/n - Math.PI/2;
       const pt = (i, val) => ({
@@ -750,7 +751,7 @@
       const values     = categories.map(c => ratings[c.key] || 0);
       const dataPoints = values.map((v,i) => pt(i,v));
       return (
-        <svg viewBox={`0 0 ${size} ${size}`} style={{ width:"100%", maxWidth: size }}>
+        <svg viewBox={`${-PAD_X} ${-PAD_Y} ${size + PAD_X*2} ${size + PAD_Y*2}`} style={{ width:"100%", maxWidth: size + PAD_X*2, display:"block", margin:"0 auto" }}>
           {[1,2,3,4,5].map(lv => (
             <polygon key={lv}
               points={categories.map((_,i) => { const p=pt(i,lv); return `${p.x},${p.y}`; }).join(" ")}
