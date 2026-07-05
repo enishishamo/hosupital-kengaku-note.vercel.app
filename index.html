@@ -1185,7 +1185,17 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
       };
 
       const exportData = () => {
-        const json = JSON.stringify(hospitals, null, 2);
+        // Full backup: records + customizations, so a wiped/reinstalled app can be fully restored
+        const backup = {
+          app: "doctama-hospital-note",
+          version: 2,
+          exportedAt: new Date().toISOString(),
+          hospitals,
+          customCategories,
+          weights,
+          packingItems,
+        };
+        const json = JSON.stringify(backup, null, 2);
         const blob = new Blob([json], { type: "application/json" });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
@@ -1195,21 +1205,97 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
         URL.revokeObjectURL(url);
       };
 
+      // PDF export via the browser's print-to-PDF. No external library → no CSP change, and Japanese renders perfectly.
+      const exportPDF = () => {
+        if (!hospitals.length) { alert("記録がまだありません"); return; }
+        const w = window.open("", "_blank");
+        if (!w) { alert("ポップアップがブロックされました。ブラウザでポップアップを許可してから再度お試しください。"); return; }
+        const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;" }[c]));
+        const nl2br = s => esc(s).replace(/\n/g, "<br>");
+        const stars = n => "★".repeat(n) + "☆".repeat(5 - n);
+        const statusLabel = st => st === "interested" ? "気になる" : "見学済み";
+        const today = new Date().toLocaleDateString("ja-JP");
+        const block = (title, val) => val ? `<div class="blk"><div class="bt">${esc(title)}</div><div class="bb">${nl2br(val)}</div></div>` : "";
+
+        const sections = hospitals.map(h => {
+          const info = [
+            ["見学日", h.date], ["診療科", h.department], ["指導医", h.chiefDoctor],
+            ["給料", h.salary], ["当直", h.nightShifts], ["受け持ち患者数", h.patientCount],
+          ].filter(([,v]) => v).map(([k,v]) => `<tr><td class="il">${esc(k)}</td><td>${esc(v)}</td></tr>`).join("");
+          const ratingsRows = allCategories
+            .filter(c => (h.ratings?.[c.key] || 0) > 0)
+            .map(c => `<tr><td class="rl">${esc(c.icon)} ${esc(c.label)}</td><td class="rv">${stars(h.ratings[c.key])} <span class="rn">${h.ratings[c.key]}/5</span></td></tr>`).join("");
+          const checked = CHECKLIST_ITEMS.filter(c => h.checklist?.[c.key]).map(c => `<li>${esc(c.label)}</li>`).join("");
+          const photos = (h.photos || []).map(p => `<img class="ph" src="${p}">`).join("");
+          return `<section class="card">
+            <div class="hd"><h2>${esc(h.name || "（無題）")}</h2><div>
+              <span class="badge">${statusLabel(h.status)}</span>${h.rank ? `<span class="badge rank">志望 ${h.rank}位</span>` : ""}</div></div>
+            ${info ? `<table class="info">${info}</table>` : ""}
+            ${ratingsRows ? `<div class="sec-t">評価</div><table class="rt">${ratingsRows}</table>` : ""}
+            ${block("面接で聞かれたこと", h.askMemo)}${block("良かった点", h.goodPoints)}${block("気になった点", h.badPoints)}${block("メモ", h.memo)}
+            ${checked ? `<div class="sec-t">チェックリスト</div><ul class="ck">${checked}</ul>` : ""}
+            ${photos ? `<div class="sec-t">写真</div><div class="phs">${photos}</div>` : ""}
+          </section>`;
+        }).join("");
+
+        w.document.write(`<!DOCTYPE html><html lang="ja"><head><meta charset="utf-8"><title>病院見学ノート_${today}</title><style>
+          *{box-sizing:border-box;} body{font-family:-apple-system,"Hiragino Sans","Yu Gothic",sans-serif;color:#1a2e24;margin:0;padding:24px;}
+          .doc-hd{text-align:center;border-bottom:2px solid #0f8a6c;padding-bottom:12px;margin-bottom:20px;}
+          .doc-hd h1{color:#0a6e52;font-size:20px;margin:0 0 4px;} .doc-hd .meta{font-size:12px;color:#7a9489;}
+          .card{border:1px solid #d1ddd8;border-radius:10px;padding:18px 20px;margin-bottom:18px;page-break-inside:avoid;}
+          .hd{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #e4ece8;padding-bottom:8px;margin-bottom:10px;}
+          .hd h2{font-size:17px;margin:0;} .badge{font-size:11px;font-weight:700;background:#eef5f1;color:#0a6e52;padding:3px 9px;border-radius:6px;margin-left:6px;} .badge.rank{background:#fff3e0;color:#c47a00;}
+          table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:8px;} .info td{padding:3px 6px;} .info .il{color:#7a9489;width:110px;}
+          .sec-t{font-size:12px;font-weight:700;color:#0a6e52;margin:12px 0 4px;}
+          .rt .rl{color:#4a6358;width:45%;padding:2px 6px;} .rt .rv{color:#0f8a6c;letter-spacing:1px;padding:2px 6px;} .rt .rn{color:#a8b8b0;font-size:11px;}
+          .blk{margin:8px 0;} .bt{font-size:12px;font-weight:700;color:#0a6e52;margin-bottom:2px;} .bb{font-size:13px;line-height:1.6;}
+          .ck{margin:4px 0;padding-left:20px;font-size:13px;} .phs{display:flex;flex-wrap:wrap;gap:6px;} .ph{max-width:32%;max-height:180px;border-radius:6px;border:1px solid #e4ece8;}
+          @media print{body{padding:0;} .card{break-inside:avoid;}}
+        </style></head><body>
+          <div class="doc-hd"><h1>🏥 ドクたま病院見学ノート</h1><div class="meta">出力日：${today} ／ ${hospitals.length}件</div></div>
+          ${sections}
+          <scr`+`ipt>window.onload=function(){setTimeout(function(){window.print();},300);};</scr`+`ipt>
+        </body></html>`);
+        w.document.close();
+      };
+
       const importData = (e) => {
         const file = e.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (ev) => {
           try {
-            const data = JSON.parse(ev.target.result);
-            if (Array.isArray(data)) {
-              setHospitals(prev => {
-                const existingIds = new Set(prev.map(h => h.id));
-                const newItems = data.filter(h => !existingIds.has(h.id));
-                return [...prev, ...newItems];
+            const parsed = JSON.parse(ev.target.result);
+            // Backward compat: old export was a bare array of records; new export is {hospitals, customCategories, weights, packingItems}
+            const isLegacy = Array.isArray(parsed);
+            const data = isLegacy ? { hospitals: parsed } : parsed;
+            if (!data || !Array.isArray(data.hospitals)) { alert("対応していないファイル形式です"); return; }
+
+            // Records: add only ones not already present (dedupe by id)
+            setHospitals(prev => {
+              const ids = new Set(prev.map(h => h.id));
+              return [...prev, ...data.hospitals.filter(h => !ids.has(h.id))];
+            });
+            // Custom categories: add non-duplicate keys
+            if (Array.isArray(data.customCategories)) {
+              setCustomCategories(prev => {
+                const keys = new Set(prev.map(c => c.key));
+                return [...prev, ...data.customCategories.filter(c => c && c.key && !keys.has(c.key))];
               });
-              alert(`${data.length}件をインポートしました`);
             }
+            // Weights: merge (imported values fill in / override)
+            if (data.weights && typeof data.weights === "object") {
+              setWeights(prev => ({ ...prev, ...data.weights }));
+            }
+            // Packing list: add non-duplicate items
+            if (Array.isArray(data.packingItems)) {
+              setPackingItems(prev => {
+                const set = new Set(prev);
+                return [...prev, ...data.packingItems.filter(x => typeof x === "string" && !set.has(x))];
+              });
+            }
+
+            alert(`記録 ${data.hospitals.length}件を読み込みました${isLegacy ? "" : "（カスタム項目・重み・持ち物も復元）"}`);
           } catch { alert("ファイルの読み込みに失敗しました"); }
         };
         reader.readAsText(file);
@@ -2232,24 +2318,28 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
             )}
             {view === "settings" && (
               <div style={{ animation:"fadeUp .32s ease" }}>
-                {/* セクション切り替え */}
-                <div style={{ display:"flex", gap:6, marginBottom:20 }}>
+                {/* セクション切り替え: 重み・評価項目は近い存在なので左2つに隣接させる。問い合わせは独立タブ */}
+                <div style={{ display:"flex", gap:4, marginBottom:20 }}>
                   {[
-                    { key:"weights",   label:"⚖️ 重み" },
-                    { key:"data",      label:"💾 データ" },
-                    { key:"checklist", label:"📋 持ち物" },
-                    { key:"categories", label:"⭐ 評価項目" },
+                    { key:"weights",    icon:"⚖️", label:"重み" },
+                    { key:"categories", icon:"⭐", label:"評価項目" },
+                    { key:"checklist",  icon:"📋", label:"持ち物" },
+                    { key:"data",       icon:"💾", label:"データ" },
+                    { key:"feedback",   icon:"💬", label:"問い合わせ" },
                   ].map(s => (
                     <button key={s.key} type="button"
                       onClick={()=>setSettingsSection(s.key)}
                       style={{
-                        flex:1, padding:"9px 4px", borderRadius:10, fontSize:12, fontWeight:700,
-                        cursor:"pointer",
+                        flex:1, padding:"8px 2px", borderRadius:10, cursor:"pointer",
+                        display:"flex", flexDirection:"column", alignItems:"center", gap:3,
                         border: settingsSection===s.key ? "2px solid #0f8a6c" : "2px solid #e4ece8",
                         background: settingsSection===s.key ? "#eef5f1" : "#fff",
                         color: settingsSection===s.key ? "#0f8a6c" : "#7a9489",
                       }}
-                    >{s.label}</button>
+                    >
+                      <span style={{ fontSize:16, lineHeight:1 }}>{s.icon}</span>
+                      <span style={{ fontSize:10.5, fontWeight:700, whiteSpace:"nowrap" }}>{s.label}</span>
+                    </button>
                   ))}
                 </div>
 
@@ -2301,18 +2391,28 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                     <div style={{ fontSize:12, color:"#7a9489", marginBottom:20 }}>機種変更・バックアップ・友達との共有に使えます</div>
 
                     <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e4ece8", padding:20, marginBottom:12 }}>
-                      <div style={{ fontSize:14, fontWeight:700, color:"#1a2e24", marginBottom:4 }}>📤 エクスポート</div>
-                      <div style={{ fontSize:12, color:"#7a9489", marginBottom:12 }}>全記録をJSONファイルで保存します（{hospitals.length}件）</div>
-                      <button onClick={exportData}
+                      <div style={{ fontSize:14, fontWeight:700, color:"#1a2e24", marginBottom:4 }}>📄 PDFで書き出す</div>
+                      <div style={{ fontSize:12, color:"#7a9489", marginBottom:12 }}>人が読める形で保存・印刷できます。開いた画面で「PDFとして保存」を選んでください（{hospitals.length}件）</div>
+                      <button onClick={exportPDF}
                         style={{ width:"100%", padding:"12px", borderRadius:11, border:"none",
                           background:"linear-gradient(135deg,#0f8a6c,#12a67e)", color:"#fff",
                           fontWeight:700, fontSize:14, cursor:"pointer" }}
-                      >ファイルに書き出す</button>
+                      >PDFを作成する</button>
+                    </div>
+
+                    <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e4ece8", padding:20, marginBottom:12 }}>
+                      <div style={{ fontSize:14, fontWeight:700, color:"#1a2e24", marginBottom:4 }}>📤 エクスポート（JSON）</div>
+                      <div style={{ fontSize:12, color:"#7a9489", marginBottom:12 }}>全記録をファイルに保存。下の「インポート」で読み込めばこのアプリに復元できます（バックアップ用・{hospitals.length}件）</div>
+                      <button onClick={exportData}
+                        style={{ width:"100%", padding:"12px", borderRadius:11, border:"1.5px solid #0f8a6c",
+                          background:"#fff", color:"#0a6e52",
+                          fontWeight:700, fontSize:14, cursor:"pointer" }}
+                      >JSONファイルに書き出す</button>
                     </div>
 
                     <div style={{ background:"#fff", borderRadius:14, border:"1px solid #e4ece8", padding:20 }}>
-                      <div style={{ fontSize:14, fontWeight:700, color:"#1a2e24", marginBottom:4 }}>📥 インポート</div>
-                      <div style={{ fontSize:12, color:"#7a9489", marginBottom:12 }}>エクスポートしたJSONファイルを読み込みます（重複は自動スキップ）</div>
+                      <div style={{ fontSize:14, fontWeight:700, color:"#1a2e24", marginBottom:4 }}>📥 インポート（JSON）</div>
+                      <div style={{ fontSize:12, color:"#7a9489", marginBottom:12 }}>書き出したJSONファイルを読み込んで復元します（重複は自動スキップ）</div>
                       <label style={{ display:"block", padding:"12px", borderRadius:11, border:"2px dashed #c8d8d0",
                         textAlign:"center", cursor:"pointer", color:"#7a9489", fontSize:13, background:"#fafcfb" }}>
                         📂 ファイルを選択
@@ -2412,35 +2512,36 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                   </div>
                 )}
 
-                {/* フィードバックボタン */}
-                <div style={{ marginTop:32 }}>
-                  <button
-                    onClick={() => {
-                      if (FEEDBACK_URL.includes("REPLACE_ME")) {
-                        alert("フィードバックフォームは準備中です。もうしばらくお待ちください。");
-                        return;
-                      }
-                      window.open(FEEDBACK_URL, "_blank", "noopener");
-                    }}
-                    style={{
-                      width:"100%", padding:"13px 16px", borderRadius:12,
-                      border:"1.5px solid #0f8a6c", background:"#fff", color:"#0a6e52",
-                      fontSize:14, fontWeight:700, cursor:"pointer",
-                      display:"flex", alignItems:"center", justifyContent:"center", gap:8,
-                    }}
-                  >💬 ご意見・バグ報告</button>
-                  <div style={{ fontSize:11, color:"#a8b8b0", textAlign:"center", marginTop:6 }}>
-                    気づいた点・ほしい機能を教えてください
-                  </div>
-                </div>
+                {/* お問い合わせ・サポート（評価軸とは独立した項目） */}
+                {settingsSection === "feedback" && (
+                  <div>
+                    <div style={{ fontSize:15, fontWeight:900, color:"#1a2e24", marginBottom:4 }}>💬 お問い合わせ・サポート</div>
+                    <div style={{ fontSize:12, color:"#7a9489", marginBottom:16 }}>気づいた点・ほしい機能があれば教えてください</div>
+                    <button
+                      onClick={() => {
+                        if (FEEDBACK_URL.includes("REPLACE_ME")) {
+                          alert("フィードバックフォームは準備中です。もうしばらくお待ちください。");
+                          return;
+                        }
+                        window.open(FEEDBACK_URL, "_blank", "noopener");
+                      }}
+                      style={{
+                        width:"100%", padding:"13px 16px", borderRadius:12,
+                        border:"1.5px solid #0f8a6c", background:"#fff", color:"#0a6e52",
+                        fontSize:14, fontWeight:700, cursor:"pointer",
+                        display:"flex", alignItems:"center", justifyContent:"center", gap:8,
+                      }}
+                    >💬 ご意見・バグ報告</button>
 
-                {/* 法的情報リンク */}
-                <div style={{ marginTop:24, padding:"18px 14px 4px", textAlign:"center", borderTop:"1px solid #e4ece8" }}>
-                  <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ color:"#7a9489", fontSize:12, textDecoration:"none", margin:"0 10px" }}>利用規約</a>
-                  ｜
-                  <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ color:"#7a9489", fontSize:12, textDecoration:"none", margin:"0 10px" }}>プライバシーポリシー</a>
-                  <div style={{ fontSize:11, color:"#a8b8b0", marginTop:8 }}>© ドクたま病院見学ノート</div>
-                </div>
+                    {/* 法的情報リンク */}
+                    <div style={{ marginTop:28, padding:"18px 14px 4px", textAlign:"center", borderTop:"1px solid #e4ece8" }}>
+                      <a href="terms.html" target="_blank" rel="noopener noreferrer" style={{ color:"#7a9489", fontSize:12, textDecoration:"none", margin:"0 10px" }}>利用規約</a>
+                      ｜
+                      <a href="privacy.html" target="_blank" rel="noopener noreferrer" style={{ color:"#7a9489", fontSize:12, textDecoration:"none", margin:"0 10px" }}>プライバシーポリシー</a>
+                      <div style={{ fontSize:11, color:"#a8b8b0", marginTop:8 }}>© ドクたま病院見学ノート</div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -2460,6 +2561,24 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
 
       const handleSubmit = async e => {
         e.preventDefault();
+        // Password reset: only email is required
+        if (mode === "reset") {
+          if (!email.trim()) { setError("メールアドレスを入力してください"); return; }
+          setError(""); setInfo(""); setLoading(true);
+          try {
+            const { error } = await window.supabase.auth.resetPasswordForEmail(email.trim(), {
+              redirectTo: window.location.origin,
+            });
+            // Show the same message regardless of whether the email exists, to avoid user enumeration
+            if (error) console.error("[reset] error:", error.message);
+          } catch (e) {
+            console.error("[reset] exception:", e);
+          } finally {
+            setInfo("登録があれば、パスワード再設定用のメールを送信しました。メールをご確認ください。");
+            setLoading(false);
+          }
+          return;
+        }
         if (!email.trim() || !password.trim()) { setError("メールアドレスとパスワードを入力してください"); return; }
         // Enforce 8+ chars only on signup; allow existing users (who may have 6-7 char passwords) to still log in
         if (mode === "register" && password.length < 8) { setError("パスワードは8文字以上にしてください"); return; }
@@ -2591,18 +2710,25 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                   }}
                 />
               </div>
-              <div style={{ marginBottom:20 }}>
-                <label style={{ fontSize:12, fontWeight:700, color:"#4a6358", display:"block", marginBottom:6 }}>パスワード</label>
-                <input
-                  type="password" value={password} onChange={e=>{ setPassword(e.target.value); setError(""); setInfo(""); }}
-                  placeholder={mode === "register" ? "8文字以上" : "パスワード"}
-                  autoComplete={mode === "login" ? "current-password" : "new-password"}
-                  style={{
-                    width:"100%", padding:"11px 14px", borderRadius:10,
-                    border:"1.5px solid #d1ddd8", fontSize:15, background:"#fafcfb",
-                  }}
-                />
-              </div>
+              {mode !== "reset" && (
+                <div style={{ marginBottom:20 }}>
+                  <label style={{ fontSize:12, fontWeight:700, color:"#4a6358", display:"block", marginBottom:6 }}>パスワード</label>
+                  <input
+                    type="password" value={password} onChange={e=>{ setPassword(e.target.value); setError(""); setInfo(""); }}
+                    placeholder={mode === "register" ? "8文字以上" : "パスワード"}
+                    autoComplete={mode === "login" ? "current-password" : "new-password"}
+                    style={{
+                      width:"100%", padding:"11px 14px", borderRadius:10,
+                      border:"1.5px solid #d1ddd8", fontSize:15, background:"#fafcfb",
+                    }}
+                  />
+                </div>
+              )}
+              {mode === "reset" && (
+                <div style={{ fontSize:12, color:"#7a9489", marginBottom:20, lineHeight:1.7 }}>
+                  登録済みのメールアドレスを入力してください。<br/>パスワード再設定用のリンクをお送りします。
+                </div>
+              )}
               {error && <div style={{ fontSize:13, color:"#c0392b", marginBottom:14, padding:"8px 12px", background:"#fef0ee", borderRadius:8 }}>{error}</div>}
               {info && <div style={{ fontSize:13, color:"#0a6e52", marginBottom:14, padding:"8px 12px", background:"#e8f5f0", borderRadius:8 }}>{info}</div>}
               <button type="submit" disabled={loading} style={{
@@ -2611,8 +2737,24 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
                 fontWeight:900, fontSize:16, cursor: loading ? "wait" : "pointer",
                 boxShadow:"0 4px 14px rgba(15,138,108,0.35)", letterSpacing:0.5,
               }}>
-                {loading ? "処理中..." : (mode === "login" ? "ログイン" : "アカウントを作成")}
+                {loading ? "処理中..." : (mode === "login" ? "ログイン" : mode === "register" ? "アカウントを作成" : "再設定メールを送る")}
               </button>
+              {mode === "login" && (
+                <div style={{ textAlign:"center", marginTop:14 }}>
+                  <button type="button" onClick={() => { setMode("reset"); setError(""); setInfo(""); }} style={{
+                    background:"none", border:"none", color:"#7a9489",
+                    fontSize:13, cursor:"pointer", textDecoration:"underline",
+                  }}>パスワードを忘れた方はこちら</button>
+                </div>
+              )}
+              {mode === "reset" && (
+                <div style={{ textAlign:"center", marginTop:14 }}>
+                  <button type="button" onClick={() => { setMode("login"); setError(""); setInfo(""); }} style={{
+                    background:"none", border:"none", color:"#7a9489",
+                    fontSize:13, cursor:"pointer", textDecoration:"underline",
+                  }}>← ログインに戻る</button>
+                </div>
+              )}
               {mode === "register" && (
                 <div style={{ fontSize:11, color:"#7a9489", marginTop:12, textAlign:"center", lineHeight:1.7 }}>
                   「アカウントを作成」を押すことで、<br/>
@@ -2853,12 +2995,102 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
       );
     }
 
+    /* ===== Reset Password Screen: shown after clicking a recovery email link ===== */
+    function ResetPasswordScreen({ onDone }) {
+      const [password, setPassword] = useState("");
+      const [confirm, setConfirm] = useState("");
+      const [error, setError] = useState("");
+      const [info, setInfo] = useState("");
+      const [loading, setLoading] = useState(false);
+      const [done, setDone] = useState(false);
+
+      const handleSubmit = async e => {
+        e.preventDefault();
+        if (password.length < 8) { setError("パスワードは8文字以上にしてください"); return; }
+        if (password !== confirm) { setError("パスワードが一致しません"); return; }
+        setError(""); setInfo(""); setLoading(true);
+        try {
+          const { error } = await window.supabase.auth.updateUser({ password });
+          if (error) {
+            setError(error.message || "パスワードの更新に失敗しました");
+          } else {
+            setDone(true);
+            setInfo("パスワードを更新しました。そのままご利用いただけます。");
+          }
+        } catch (e) {
+          setError(e.message || "エラーが発生しました");
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      return (
+        <div style={{
+          minHeight:"100vh", background:"linear-gradient(170deg,#f0f6f3 0%,#e8f0eb 50%,#f5f8f6 100%)",
+          display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"24px",
+        }}>
+          <div style={{ textAlign:"center", marginBottom:32 }}>
+            <div style={{
+              width:72, height:72, borderRadius:20, margin:"0 auto 16px",
+              background:"linear-gradient(135deg,#0f8a6c,#085c48)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontSize:36, boxShadow:"0 8px 24px rgba(15,138,108,0.3)",
+            }}>🔑</div>
+            <div style={{ fontSize:22, fontWeight:900, color:"#1a2e24", letterSpacing:-0.5 }}>新しいパスワードを設定</div>
+          </div>
+          <div style={{
+            background:"#fff", borderRadius:20, padding:"28px 28px 32px",
+            width:"100%", maxWidth:360, boxShadow:"0 4px 24px rgba(0,0,0,0.08)",
+          }}>
+            {done ? (
+              <>
+                {info && <div style={{ fontSize:13, color:"#0a6e52", marginBottom:18, padding:"10px 12px", background:"#e8f5f0", borderRadius:8 }}>{info}</div>}
+                <button onClick={() => onDone && onDone()} style={{
+                  width:"100%", padding:"13px 0", borderRadius:12, border:"none",
+                  background:"linear-gradient(135deg,#0f8a6c,#085c48)", color:"#fff",
+                  fontWeight:900, fontSize:16, cursor:"pointer",
+                  boxShadow:"0 4px 14px rgba(15,138,108,0.35)", letterSpacing:0.5,
+                }}>アプリを開く</button>
+              </>
+            ) : (
+              <form onSubmit={handleSubmit}>
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ fontSize:12, fontWeight:700, color:"#4a6358", display:"block", marginBottom:6 }}>新しいパスワード</label>
+                  <input
+                    type="password" value={password} onChange={e=>{ setPassword(e.target.value); setError(""); }}
+                    placeholder="8文字以上" autoComplete="new-password"
+                    style={{ width:"100%", padding:"11px 14px", borderRadius:10, border:"1.5px solid #d1ddd8", fontSize:15, background:"#fafcfb" }}
+                  />
+                </div>
+                <div style={{ marginBottom:20 }}>
+                  <label style={{ fontSize:12, fontWeight:700, color:"#4a6358", display:"block", marginBottom:6 }}>新しいパスワード（確認）</label>
+                  <input
+                    type="password" value={confirm} onChange={e=>{ setConfirm(e.target.value); setError(""); }}
+                    placeholder="もう一度入力" autoComplete="new-password"
+                    style={{ width:"100%", padding:"11px 14px", borderRadius:10, border:"1.5px solid #d1ddd8", fontSize:15, background:"#fafcfb" }}
+                  />
+                </div>
+                {error && <div style={{ fontSize:13, color:"#c0392b", marginBottom:14, padding:"8px 12px", background:"#fef0ee", borderRadius:8 }}>{error}</div>}
+                <button type="submit" disabled={loading} style={{
+                  width:"100%", padding:"13px 0", borderRadius:12, border:"none",
+                  background: loading ? "#a8c4ba" : "linear-gradient(135deg,#0f8a6c,#085c48)", color:"#fff",
+                  fontWeight:900, fontSize:16, cursor: loading ? "wait" : "pointer",
+                  boxShadow:"0 4px 14px rgba(15,138,108,0.35)", letterSpacing:0.5,
+                }}>{loading ? "更新中..." : "パスワードを更新"}</button>
+              </form>
+            )}
+          </div>
+        </div>
+      );
+    }
+
     /* ===== Root: Supabase Auth-driven ===== */
     function Root() {
       const [authUser, setAuthUser] = useState(null);
       const [authLoading, setAuthLoading] = useState(true);
       const [migrationState, setMigrationState] = useState("checking"); // checking | needed | done
       const [showLanding, setShowLanding] = useState(true);
+      const [recovery, setRecovery] = useState(false); // true while a password-recovery link session is active
 
       React.useEffect(() => {
         if (!window.supabase) { setAuthLoading(false); return; }
@@ -2866,7 +3098,9 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
           setAuthUser(session?.user ?? null);
           setAuthLoading(false);
         });
-        const { data: { subscription } } = window.supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = window.supabase.auth.onAuthStateChange((event, session) => {
+          // Recovery link click: force the "set new password" screen instead of entering the app
+          if (event === "PASSWORD_RECOVERY") setRecovery(true);
           setAuthUser(session?.user ?? null);
         });
         return () => subscription?.unsubscribe();
@@ -2906,6 +3140,10 @@ TEL : 〇〇〇-〇〇〇〇-〇〇〇〇
 
       if (authLoading) {
         return <div style={{ padding:40, textAlign:"center", color:"#4a6358" }}>読み込み中...</div>;
+      }
+      // Password recovery takes priority: even with a valid session, show the reset form first
+      if (recovery) {
+        return <ResetPasswordScreen onDone={() => setRecovery(false)} />;
       }
       if (!authUser) {
         if (showLanding) return <LandingPage onStart={() => setShowLanding(false)} />;
